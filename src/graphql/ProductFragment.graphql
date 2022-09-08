@@ -40,7 +40,7 @@ fragment ProductFragment on Product {
     edges {
       cursor
       node {
-        ...VariantFragment
+        ...VariantWithProductFragment
       }
     }
   }

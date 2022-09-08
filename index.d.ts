@@ -51,7 +51,7 @@ declare namespace ShopifyBuy {
 
     export interface CollectionResource {
         fetch(id: string): Promise<Product[]>;
-        fetchWithProducts(id: string): Promise<any[]>; // TODO fix to be a type: Docs: Fetches a single collection by ID on the shop, not including products.
+        fetchWithProducts(id: string, options?: {productsFirst: number}): Promise<any[]>;
         fetchAll(pageSizeopt?: number): Promise<any[]>; // TODO fix to be a type: Docs: Fetches all collections on the shop, not including products.
         fetchAllWithProducts(): Promise<any[]>; // TODO fix to be a type: DOC: Fetches all collections on the shop, including products.
         fetchByHandle(handle: string): Promise<any[]>; // TODO fix to be a type: DOC: Fetches a collection by handle on the shop. Assuming it does not give products
@@ -177,6 +177,11 @@ declare namespace ShopifyBuy {
          * The product’s vendor name
          */
         vendor: string;
+
+        /**
+         * The product's tags.
+         */
+        tags: Scalar[];
     }
 
     export interface ProductVariant extends GraphModel {
@@ -195,6 +200,12 @@ declare namespace ShopifyBuy {
          * Price of variant, formatted according to shop currency format string. For instance "$10.00"
          */
         formattedPrice: string;
+
+        /**
+         *  Indicates whether the variant is out of stock but still available for purchase (used
+         *  for backorders).
+         */
+        currentlyNotInStock: boolean;
 
         /**
          * Variant weight in grams. If no weight is defined grams will be 0.
@@ -218,24 +229,19 @@ declare namespace ShopifyBuy {
         imageVariant: Array<ImageVariant>;
 
         /**
-         * Option values associated with this variant, ex {name: "color", value: "Blue"}
-         */
-        optionValues: Array<OptionValue>;
-
-        /**
          * Price of the variant. The price will be in the following form: "10.00"
          */
         price: string;
 
         /**
-         * ID of product variant belongs to
+         * A limited reference to the variant's product.
          */
-        productId: string | number;
+        product: ProductWithinVariant;
 
         /**
-         * Title of product variant belongs to
+         * Selected options.
          */
-        productTitle: string;
+        selectedOptions: SelectedOption[];
 
         /**
          * Title of variant
@@ -304,21 +310,11 @@ declare namespace ShopifyBuy {
     }
 
     export interface Cart extends GraphModel {
-        /**
-         * Get checkout URL for current cart
-         */
-        checkoutUrl: string;
 
         /**
          * get ID for current cart
          */
         id: string | number;
-
-        /**
-         * Gets the total quantity of all line items. Example: you've added two variants
-         * with quantities 3 and 2. lineItemCount will be 5.
-         */
-        lineItemCount: number;
 
         /**
          * Get an Array of CartLineItemModel's
@@ -392,14 +388,9 @@ declare namespace ShopifyBuy {
         title: string;
 
         /**
-         * ID of line item variant.
+         * Variant of the line item that also includes a reference back to its parent product.
          */
-        variantId: string | number;
-
-        /**
-         * Title of variant.
-         */
-        variantTitle: string;
+        variant: ProductVariant & {product: ProductWithinVariant};
     }
 
     export interface LineItemToAdd {
@@ -482,6 +473,11 @@ declare namespace ShopifyBuy {
         imageForSize(image: Image, options: ImageOptions): string;
     }
 
+    export interface SelectedOption {
+        name: string;
+        value: string;
+    }
+
     export interface ImageOptions {
         maxWidth: number;
         maxHeight: number;
@@ -496,8 +492,18 @@ declare namespace ShopifyBuy {
         attrs?: any;
         onlineStoreUrl?: string | undefined;
     }
+
+    /**
+     * A subset of a product object that only includes the id and title. This exists in
+     * variants, so that they each have a reference back to their parent product node.
+     */
+    export interface ProductWithinVariant extends Pick<Product, "title" | "id">{}
+
+    export interface Scalar {
+        value: string;
+    }
 }
 
-declare module 'shopify-buy' {
+declare module '@hellojuniper-com/shopify-buy' {
     export = ShopifyBuy;
 }

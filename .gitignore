@@ -19,6 +19,7 @@ index*.js.map
 # Decrypted secrets
 secrets.json
 .nvmrc
+.npmrc
 
 # IDE settings
 .vscode
