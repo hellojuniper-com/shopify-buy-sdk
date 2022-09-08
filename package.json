@@ -5,6 +5,9 @@
   "main": "index.js",
   "jsnext:main": "index.es.js",
   "repository": "git@github.com:hellojuniper-com/shopify-buy-sdk.git",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "scripts": {
     "prepublish": "yarn run build",
     "build": "yarn run build:optimized && yarn run build:unoptimized",
