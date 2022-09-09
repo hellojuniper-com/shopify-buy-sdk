@@ -10,11 +10,11 @@
 
 /**
  * The JS Buy SDK is a lightweight library that allows you to build ecommerce into any website.
- * It is based on Shopify’s API and provides the ability to retrieve products and collections from your shop,
- * add products to a cart, and checkout.
- * It can render data on the client side or server. This will allow you to add ecommerce functionality to any
- * website or javascript application. This is helpful if you already have a website and need to add ecommerce
- * or only need a simple buy button on your site.
+ * It is based on Shopify’s API and provides the ability to retrieve products and collections from
+ * your shop, add products to a cart, and checkout. It can render data on the client side or
+ * server. This will allow you to add ecommerce functionality to any website or javascript
+ * application. This is helpful if you already have a website and need to add ecommerce or only
+ * need a simple buy button on your site.
  */
 
 declare namespace ShopifyBuy {
@@ -24,8 +24,8 @@ declare namespace ShopifyBuy {
         product: ShopifyBuy.ProductResource;
         collection: ShopifyBuy.CollectionResource;
         checkout: ShopifyBuy.CheckoutResource;
-        shop: ShopResource;
-        image: Image;
+        shop: ShopifyBuy.ShopResource;
+        image: ShopifyBuy.ImageResource;
         fetchNextPage<T extends GraphModel>(nextArray: T[]): T[];
     }
 
@@ -42,17 +42,21 @@ declare namespace ShopifyBuy {
         fetchMultiple(ids: string[]): Promise<Product[]>;
         fetchQuery(query: Query): Promise<Product[]>;
 
+        helpers: ProductHelpers;
+    }
+
+    export interface ProductHelpers {
         /**
          *   Product Helper Namespace
          *   @link https://shopify.github.io/js-buy-sdk/ProductResource.html
          */
-        variantForOptions(product: Product, options: Option): ProductVariant;
+        variantForOptions(product: Product, options: {[optionName: string]: string}): ProductVariant;
     }
 
     export interface CollectionResource {
         fetch(id: string): Promise<Product[]>;
         fetchWithProducts(id: string, options?: {productsFirst: number}): Promise<any[]>;
-        fetchAll(pageSizeopt?: number): Promise<any[]>; // TODO fix to be a type: Docs: Fetches all collections on the shop, not including products.
+        fetchAll(options?: {first: number, productsFirst: number}): Promise<any[]>;
         fetchAllWithProducts(): Promise<any[]>; // TODO fix to be a type: DOC: Fetches all collections on the shop, including products.
         fetchByHandle(handle: string): Promise<any[]>; // TODO fix to be a type: DOC: Fetches a collection by handle on the shop. Assuming it does not give products
         fetchQuery(query: Query): Promise<any[]>; // TODO fix to be a type: DOC: Fetches a collection by handle on the shop. Assuming it does not give products
@@ -99,12 +103,25 @@ declare namespace ShopifyBuy {
         /**
          * Update line item quantities based on an array of line item ids
          */
-        updateLineItems(checkoutId: string | number, lineItems: AttributeInput[]): Promise<Cart>;
+        updateLineItems(checkoutId: string | number, lineItems: LineItemToUpdate[]): Promise<Cart>;
     }
 
     export interface ShopResource {
         fetchInfo(): Promise<Shop>;
         fetchPolicies(): Promise<Shop>;
+    }
+
+    export interface ImageResource {
+        helpers: ImageHelpers;
+    }
+
+    export interface ImageHelpers {
+        /**
+         * Returns src URL for new image size/variant
+         * @param image The image you would like a different size for.
+         * @param options Image Max width and height configuration.
+         */
+        imageForSize(image: Image, options: ImageOptions): string;
     }
 
     export interface Query {
@@ -129,6 +146,11 @@ declare namespace ShopifyBuy {
         description: string;
 
         /**
+         * The HTML-serialized version of the product description.
+         */
+        descriptionHtml: string;
+
+        /**
          * Product unique ID
          */
         id: string | number;
@@ -145,16 +167,17 @@ declare namespace ShopifyBuy {
 
         /**
          * Get an array of Product Options. Product Options can be used to define
-         * the currently selectedVariant from which you can get a checkout url (ProductVariant.checkoutUrl)
-         * or can be added to a cart (Cart.createLineItemsFromVariants).
+         * the currently selectedVariant from which you can get a checkout url
+         * (ProductVariant.checkoutUrl) or can be added to a cart
+         * (Cart.createLineItemsFromVariants).
          */
-        options: Array<Option>;
+        options: Array<ProductOption>;
 
         /**
-         * Retrieve variant for currently selected options. By default the first value in each option is selected
-         * which means selectedVariant will never be null. With a selectedVariant you can
-         * create checkout url (ProductVariant.checkoutUrl) or
-         * it can be added to a cart (Cart.createLineItemsFromVariants).
+         * Retrieve variant for currently selected options. By default the first value in each
+         * option is selected which means selectedVariant will never be null. With a
+         * selectedVariant you can create checkout url (ProductVariant.checkoutUrl) or it can be
+         * added to a cart (Cart.createLineItemsFromVariants).
          */
         selectedVariant: ProductVariant;
 
@@ -164,7 +187,8 @@ declare namespace ShopifyBuy {
         selectedVariantImage: Image;
 
         /**
-         * A read only Array of Strings represented currently selected option values. eg. ["Large", "Red"]
+         * A read only Array of Strings represented currently selected option values. eg. ["Large",
+         * "Red"]
          */
         selections: Array<string>;
 
@@ -197,20 +221,10 @@ declare namespace ShopifyBuy {
         compareAtPrice: string;
 
         /**
-         * Price of variant, formatted according to shop currency format string. For instance "$10.00"
-         */
-        formattedPrice: string;
-
-        /**
          *  Indicates whether the variant is out of stock but still available for purchase (used
          *  for backorders).
          */
         currentlyNotInStock: boolean;
-
-        /**
-         * Variant weight in grams. If no weight is defined grams will be 0.
-         */
-        grams: number;
 
         /**
          * Variant unique ID
@@ -222,11 +236,6 @@ declare namespace ShopifyBuy {
          */
 
         image: Image;
-
-        /**
-         * Image variants available for a variant.
-         */
-        imageVariant: Array<ImageVariant>;
 
         /**
          * Price of the variant. The price will be in the following form: "10.00"
@@ -247,39 +256,18 @@ declare namespace ShopifyBuy {
          * Title of variant
          */
         title: string;
-
-        /*
-         * Get a checkout url for a specific product variant.
-         * You can optionally pass a quantity.
-         * If no quantity is passed then quantity will default to 1.
-         */
-        checkoutUrl(quantitiy: number): string;
     }
 
-    export interface Option {
+    export interface ProductOption {
         /**
-         * name of option (ex. "Size", "Color")
+         * The name of option (ex. "Size", "Color").
          */
         name: string;
 
         /**
-         * get/set the currently selected option value with one of the values from the Product Options/values array.
-         * For instance if the option values array had the following ["Large", "Medium", "Small"] setting selected to be
-         * "Large", "Medium", or "Small" would be valid any other value would throw an Error.
+         * The list of possible values for the option.
          */
-        selected: string;
-
-        /**
-         * an Array possible values for option. For instance if this option
-         * is a "Size" option an example value for values could be: ["Large", "Medium", "Small"]
-         */
-        values: Array<OptionValue>;
-    }
-
-    export interface OptionValue {
-        name: string;
-        option_id: string;
-        value: any;
+        values: Array<Scalar>;
     }
 
     export interface CustomAttribute {
@@ -323,7 +311,8 @@ declare namespace ShopifyBuy {
 
         /**
          * Get current subtotal price for all line items, before shipping, taxes, and discounts.
-         * Example: two items have been added to the cart that cost $1.25 then the subtotal will be 2.50
+         * Example: two items have been added to the cart that cost $1.25 then the subtotal will be
+         * 2.50
          */
         subtotalPrice: string;
 
@@ -340,42 +329,9 @@ declare namespace ShopifyBuy {
 
     export interface LineItem extends GraphModel {
         /**
-         * Compare at price for variant. The compareAtPrice would be the price of the product
-         * previously before the product went on sale.
-         * If no compareAtPrice is set then this value will be null. An example value: "5.00".
-         */
-        compareAtPrice: string | null;
-
-        /**
-         * Variant's weight in grams. If no weight is set then 0 is returned.
-         */
-        grams: number;
-
-        /**
-         * A line item ID.
+         * A line item ID in the form of gid://shopify/CheckoutLineItem/:legacyResourceId.
          */
         id: string | number;
-
-        /**
-         * Variant's image.
-         */
-        image: Image;
-
-        /**
-         * The total price for this line item. For instance if the variant costs 1.50 and you have a
-         * quantity of 2 then line_price will be 3.00.
-         */
-        linePrice: string;
-
-        /**
-         * Price of the variant. For example: "5.00".
-         */
-        price: string;
-
-        /**
-         * ID of variant's product.
-         */
-        productId: string | number;
 
         /**
          * Count of variants to order.
@@ -391,12 +347,24 @@ declare namespace ShopifyBuy {
          * Variant of the line item that also includes a reference back to its parent product.
          */
         variant: ProductVariant & {product: ProductWithinVariant};
+
+        /**
+         * Custom attributes of a line item.
+         */
+        customAttributes: CustomAttribute[];
     }
 
     export interface LineItemToAdd {
         variantId: string | number;
         quantity: number;
-        customAttributes?: CustomAttribute[] | undefined;
+        customAttributes?: CustomAttribute[];
+    }
+
+    export interface LineItemToUpdate {
+        /* Identifier of the line item. */
+        id: string | number;
+        quantity: number;
+        customAttributes?: CustomAttribute[];
     }
 
     export interface Item {
@@ -419,7 +387,7 @@ declare namespace ShopifyBuy {
 
     /**
      *  https://help.shopify.com/api/custom-storefronts/storefront-api/reference/input_object/attributeinput
-     *  https://help.shopify.com/api/custom-storefronts/storefront-api/reference/input_object/checkoutlineitemupdateinput
+     * https://help.shopify.com/api/custom-storefronts/storefront-api/reference/input_object/checkoutlineitemupdateinput
      */
     export interface AttributeInput {
         key?: string | undefined;
@@ -431,7 +399,8 @@ declare namespace ShopifyBuy {
 
     /**
      * TODO Validate schema matches js-buy
-     * Derived from REST API Docs: https://help.shopify.com/api/custom-storefronts/storefront-api/reference/object/shop#fields
+     * Derived from REST API Docs:
+     * https://help.shopify.com/api/custom-storefronts/storefront-api/reference/object/shop#fields
      */
     export interface Shop {
         description: string;
@@ -453,24 +422,16 @@ declare namespace ShopifyBuy {
      */
     export interface Image extends GraphModel {
         id: string | number;
-        created_at: string;
-        position: number;
-        updated_at: string;
-        product_id: string;
+        height: number;
+        width: number;
         src: string;
-        variant_ids: Array<string>;
+        altText: string;
     }
 
     export interface ImageVariant extends Image {
         name: string;
         dimensions: string;
         src: string;
-        /**
-         * Returns src URL for new image size/variant
-         * @param image The image you would like a different size for.
-         * @param options Image Max width and height configuration.
-         */
-        imageForSize(image: Image, options: ImageOptions): string;
     }
 
     export interface SelectedOption {
