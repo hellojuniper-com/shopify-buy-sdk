@@ -71,6 +71,15 @@ declare namespace ShopifyBuy {
             customAttributes?: AttributeInput[],
         ): Promise<Cart>;
 
+        updateAttributes(
+            checkoutId: string,
+            input: {
+                allowPartialAddresses?: boolean,
+                customAttributes?: CustomAttribute[],
+                note?: string,
+            },
+        ): Promise<Cart>;
+
         fetch(id: string): Promise<Cart>;
 
         addLineItems(checkoutId: string | number, lineItems: LineItemToAdd[]): Promise<Cart>;
@@ -345,6 +354,11 @@ declare namespace ShopifyBuy {
          * Get checkout url
          */
         webUrl: string;
+
+        /**
+         * A note that is associated with the cart, such as a personalized message from the buyer.
+         */
+        note: string;
     }
 
     export interface LineItem extends GraphModel {
