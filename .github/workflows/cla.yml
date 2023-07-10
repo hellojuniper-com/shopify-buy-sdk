@@ -3,6 +3,8 @@ name: Contributor License Agreement (CLA)
 on:
   pull_request_target:
     types: [opened, synchronize]
+    branches:
+      - main
   issue_comment:
     types: [created]
 
