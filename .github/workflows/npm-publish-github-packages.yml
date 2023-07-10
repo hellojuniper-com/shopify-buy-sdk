@@ -10,8 +10,6 @@ on:
 env:
   # Unit tests should always be local
   JUNIPER_STAGE: LOCAL
-  # JUNIPER_NPM_TOKEN should be an organization secret,
-  #  we just present it as an ENV var during runtime for the .npmrc to consume
   JUNIPER_NPM_TOKEN: ${{ secrets.JUNIPER_NPM_TOKEN }}
 
 jobs:
