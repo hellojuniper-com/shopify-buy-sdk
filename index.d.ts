@@ -219,13 +219,13 @@ declare namespace ShopifyBuy {
          * The product's custom metafields that each include only a single reference.
          * https://shopify.dev/docs/api/storefront/2023-10/objects/Metafield#field-metafield-reference
          */
-        metafieldsWithReference: Array<Metafield | null>;
+        metafieldsWithReference: Array<Omit<Metafield, "references"> | null>;
 
         /**
          * The product's custom metafields that each include a list of references.
          * https://shopify.dev/docs/api/storefront/2023-10/objects/Metafield#connection-metafield-references
          */
-        metafieldsWithReferenceList: Array<Metafield | null>;
+        metafieldsWithReferenceList: Array<Required<Omit<Metafield, "reference">> | null>;
 
         /**
          * The sellable quantity of the product.
@@ -286,13 +286,13 @@ declare namespace ShopifyBuy {
          * The variant's custom metafields that each include only a single reference.
          * https://shopify.dev/docs/api/storefront/2023-10/objects/Metafield#field-metafield-reference
          */
-        metafieldsWithReference: Array<Metafield | null>;
+        metafieldsWithReference: Array<Omit<Metafield, "references"> | null>;
 
         /**
          * The variant's custom metafields that each include a list of references.
          * https://shopify.dev/docs/api/storefront/2023-10/objects/Metafield#connection-metafield-references
          */
-        metafieldsWithReferenceList: Array<Metafield | null>;
+        metafieldsWithReferenceList: Array<Required<Omit<Metafield, "reference">> | null>;
 
         /**
          * The sellable quantity of the variant.
