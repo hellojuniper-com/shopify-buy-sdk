@@ -558,7 +558,7 @@ declare namespace ShopifyBuy {
         id: string;
         namespace: string;
         reference: MetafieldReference | null;
-        references?: Array<MetafieldReference> | null;  // TODO: check type
+        references?: Array<MetafieldReference> | null;
     }
 }
 
