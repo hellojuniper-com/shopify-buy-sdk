@@ -4,9 +4,7 @@
 run-name: Publish | @${{ github.repository }} [${{ github.ref_name }}]
 
 on:
-  release:
-    types: [ created ]
-
+  pull_request
 env:
   # Unit tests should always be local
   JUNIPER_STAGE: LOCAL
