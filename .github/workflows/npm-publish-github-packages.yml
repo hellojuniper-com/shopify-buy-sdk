@@ -53,6 +53,6 @@ jobs:
           npm i
           fi
       - run: npm run build
-      - run: npm publish --dry-run
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
