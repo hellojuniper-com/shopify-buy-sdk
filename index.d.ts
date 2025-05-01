@@ -447,6 +447,16 @@ declare namespace ShopifyBuy {
     }
 
     /**
+     * https://shopify.dev/docs/api/storefront/latest/objects/Page
+     */
+    export interface Page {
+        id: string;
+        title: string;
+        handle: string;
+        body: string;
+    }
+
+    /**
      * TODO Validate schema matches js-buy
      * Derived from REST API Docs:
      * https://help.shopify.com/api/custom-storefronts/storefront-api/reference/object/shop#fields
@@ -455,15 +465,26 @@ declare namespace ShopifyBuy {
         description: string;
         moneyFormat: string;
         name: string;
-        /**
-         * TODO Add types for the Shop properties below
-         * PaymentSettings, ShopPolicy etc
-         */
         paymentSettings: any;
         primaryDomain: any;
+
+        // Inherited from https://www.npmjs.com/package/@types/shopify-buy:
+
+        /** @deprecated: Use {@link privacyPolicyPage} instead. */
         privacyPolicy: any;
+        /** @deprecated */
         refundPolicy: any;
+        /** @deprecated: Use {@link termsOfServicePage} instead. */
         termsOfService: any;
+
+        // The new Juniper-specific documents of the shop
+
+        /** The {@link Page} object for Juniper's Privacy Policy document. */
+        privacyPolicyPage: Page;
+        /** The {@link Page} object for Juniper's Terms of Service document. */
+        termsOfServicePage: Page;
+        /** The {@link Page} object for Juniper's FAQ document. */
+        faqPolicy: Page;
     }
 
     /**

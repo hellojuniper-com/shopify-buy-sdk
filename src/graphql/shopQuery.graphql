@@ -1,3 +1,10 @@
+fragment DocumentPageFragment on Page {
+  id
+  handle
+  title
+  body
+}
+
 query {
   shop {
     paymentSettings {
@@ -11,5 +18,14 @@ query {
       sslEnabled
       url
     }
+  }
+  privacyPolicyPage: page(id: "gid://shopify/Page/49486823485") {
+    ...DocumentPageFragment
+  }
+  termsOfServicePage: page(id: "gid://shopify/Page/49486757949") {
+    ...DocumentPageFragment
+  }
+  faqPage: page(id: "gid://shopify/Page/49486856253") {
+    ...DocumentPageFragment
   }
 }

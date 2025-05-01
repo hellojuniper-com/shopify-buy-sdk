@@ -25,7 +25,14 @@ class ShopResource extends Resource {
   fetchInfo() {
     return this.graphQLClient
       .send(shopQuery)
-      .then(defaultResolver('shop'));
+      .then(({model, errors}) => {
+        return {
+          ...defaultResolver('shop')(model, errors),
+          ...defaultResolver('privacyPolicy')(model, errors),
+          ...defaultResolver('termsOfService')(model, errors),
+          ...defaultResolver('faq')(model, errors)
+        };
+      });
   }
 
   /**
