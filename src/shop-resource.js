@@ -25,13 +25,15 @@ class ShopResource extends Resource {
   fetchInfo() {
     return this.graphQLClient
       .send(shopQuery)
-      .then(({model, errors}) => {
-        return {
-          ...defaultResolver('shop')(model, errors),
-          ...defaultResolver('privacyPolicy')(model, errors),
-          ...defaultResolver('termsOfService')(model, errors),
-          ...defaultResolver('faq')(model, errors)
-        };
+      .then(async ({model, errors}) => {
+        const [shop, privacyPolicyPage, termsOfServicePage, faqPage] = await Promise.all([
+          defaultResolver('shop')({model, errors}),
+          defaultResolver('privacyPolicyPage')({model, errors}),
+          defaultResolver('termsOfServicePage')({model, errors}),
+          defaultResolver('faqPage')({model, errors})
+        ]);
+
+        return Object.assign({}, shop, {privacyPolicyPage}, {termsOfServicePage}, {faqPage});
       });
   }
 

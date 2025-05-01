@@ -22,10 +22,10 @@ query {
   privacyPolicyPage: page(id: "gid://shopify/Page/49486823485") {
     ...DocumentPageFragment
   }
-  termsOfServicePage: page(id: "gid://shopify/Page/49486757949") {
+  termsOfServicePage: page(id: "gid://shopify/Page/49486856253") {
     ...DocumentPageFragment
   }
-  faqPage: page(id: "gid://shopify/Page/49486856253") {
+  faqPage: page(id: "gid://shopify/Page/49486757949") {
     ...DocumentPageFragment
   }
 }
