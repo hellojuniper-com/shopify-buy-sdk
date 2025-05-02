@@ -468,7 +468,7 @@ declare namespace ShopifyBuy {
         paymentSettings: any;
         primaryDomain: any;
 
-        // Inherited from https://www.npmjs.com/package/@types/shopify-buy:
+        // Inherited from https://www.npmjs.com/package/@types/shopify-buy
 
         /** @deprecated: Use {@link privacyPolicyPage} instead. */
         privacyPolicy: any;
@@ -484,7 +484,7 @@ declare namespace ShopifyBuy {
         /** The {@link Page} object for Juniper's Terms of Service document. */
         termsOfServicePage: Page;
         /** The {@link Page} object for Juniper's FAQ document. */
-        faqPolicy: Page;
+        faqPolicyPage: Page;
     }
 
     /**
