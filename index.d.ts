@@ -484,7 +484,7 @@ declare namespace ShopifyBuy {
         /** The {@link Page} object for Juniper's Terms of Service document. */
         termsOfServicePage: Page;
         /** The {@link Page} object for Juniper's FAQ document. */
-        faqPolicyPage: Page;
+        faqPage: Page;
     }
 
     /**
