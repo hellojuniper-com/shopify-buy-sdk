@@ -391,6 +391,7 @@ export const MOCK_CHECKOUT_LINE_ITEMS = [
       product: {
         id: 'gid://shopify/Product/9899493556246',
         handle: 'alex-kassian-strings-of-eden',
+        title: 'Alex Kassian - Strings Of Eden',
         type: {
           name: 'Product',
           kind: 'OBJECT',
@@ -599,6 +600,7 @@ export const MOCK_CHECKOUT_LINE_ITEMS = [
       product: {
         id: 'gid://shopify/Product/9899493589014',
         handle: 'efterklang-tripper',
+        title: 'Efterklang - Tripper',
         type: {
           name: 'Product',
           kind: 'OBJECT',
