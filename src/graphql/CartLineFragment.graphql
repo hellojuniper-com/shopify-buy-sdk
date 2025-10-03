@@ -17,6 +17,7 @@ fragment CartLineFragment on BaseCartLine {
         title
         metafieldsWithReference: metafields(identifiers: [
           {namespace: "productListing", key: "isBundleExclusive"},
+          {namespace: "productListing", key: "maxQtyInCart"},
         ]) {
           ...MetafieldWithReferenceFragment
         }
