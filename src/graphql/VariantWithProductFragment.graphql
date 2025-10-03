@@ -6,7 +6,8 @@ fragment VariantWithProductFragment on ProductVariant {
     title
     metafieldsWithReference: metafields(identifiers: [
       {namespace: "taiga", key: "preOrderStopCondition"},
-      {namespace: "taiga", key: "preOrderDateEstimate"}
+      {namespace: "taiga", key: "preOrderDateEstimate"},
+      {namespace: "productListing", key: "maxQtyInCart"},
     ]) {
       ...MetafieldWithReferenceFragment
     }

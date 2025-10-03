@@ -60,22 +60,10 @@ export function mapVariant(merchandise) {
     }
   }
 
-  // The actual Cart merchandise and Checkout variant objects map cleanly to each other,
-  // but the SDK wasn't fetching the title from the product object, so we need to remove it
-  const productWithoutTitle = {};
-
-  if (merchandise.product) {
-    for (const key in merchandise.product) {
-      if (merchandise.product.hasOwnProperty(key) && key !== 'title') {
-        productWithoutTitle[key] = merchandise.product[key];
-      }
-    }
-  }
-
   // Add additional properties
   result.priceV2 = merchandise.price;
   result.compareAtPriceV2 = merchandise.compareAtPrice;
-  result.product = productWithoutTitle;
+  result.product = merchandise.product;
   result.type = getVariantType();
 
   return result;
