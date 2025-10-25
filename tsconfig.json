@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ES2015",
+    "lib": ["ES2015", "DOM"],
+    "moduleResolution": "node",
+    "allowJs": false,
+    "checkJs": false,
+    "declaration": true,
+    "declarationMap": false,
+    "declarationDir": "./typescript/types",
+    "outDir": "./typescript",
+    "rootDir": "./typescript",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": false,
+    "noEmit": false
+  },
+  "include": [
+    "typescript/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".tmp",
+    "typescript/**/*.js",
+    "typescript/types"
+  ]
+}

@@ -13,10 +13,12 @@ export default function generateBaseRollupConfig() {
       }),
       nodeResolve({
         jsnext: true,
-        main: true
+        main: true,
+        extensions: ['.js', '.ts']
       }),
       babel({
         babelrc: false,
+        exclude: 'node_modules/**',
         presets: [
           [`${process.cwd()}/node_modules/babel-preset-env/lib/index`, {
             targets: {

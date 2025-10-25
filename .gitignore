@@ -11,6 +11,11 @@ node_modules
 types.js
 optimized-types.js
 
+# Compiled TypeScript files
+typescript/**/*.js
+typescript/**/*.js.map
+typescript/types/
+
 # Build artifacts
 index*.js
 index*.js.map
@@ -24,5 +29,6 @@ secrets.json
 # IDE settings
 .vscode
 .idea
+.claude
 
 .DS_Store

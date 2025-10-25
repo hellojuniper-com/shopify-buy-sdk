@@ -51,10 +51,20 @@ fragment VariantFragment on ProductVariant {
       { namespace: "productListing", key: "endingQuantity" },
       { namespace: "productListing", key: "donationAmount" },
       { namespace: "productListing", key: "timelineTextAddition" },
-      { namespace: "productListing", key: "preOrderDateEstimate" }
+      { namespace: "productListing", key: "preOrderDateEstimate" },
+      { namespace: "productListing", key: "inStockToPreOrderWWTransitionDate" },
+      { namespace: "productListing", key: "inStockToPreOrderUSTransitionDate" },
     ]
   ) {
     ...MetafieldWithReferenceFragment
+  }
+  metafieldsWithReferenceList: metafields(
+    identifiers: [
+      { namespace: "productListing", key: "preOrderWWTimeline" },
+      { namespace: "productListing", key: "preOrderUSTimeline" },
+    ]
+  ) {
+      ...MetafieldWithReferenceListFragment
   }
   quantity: quantityAvailable
 }

@@ -22,6 +22,11 @@
       "node_modules",
       ".json$",
       ".graphql$"
-    ]
+    ],
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts"]
+      }
+    }
   }
 }

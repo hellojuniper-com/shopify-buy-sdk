@@ -18,6 +18,7 @@ fragment MetafieldWithReferenceListFragment on Metafield {
             node {
                 ...GenericFileFragment
                 ...MediaImageFragment
+                ...MetaobjectFragment
             }
         }
     }
