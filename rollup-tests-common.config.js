@@ -4,7 +4,7 @@ import multiEntry from 'rollup-plugin-multi-entry';
 import eslintTestGenerator from './scripts/rollup-plugin-eslint-test-generator';
 
 export default {
-  entry: ['test/setup.js', 'test/**/*-test.js', 'typescript/test/**/*-test.js'],
+  entry: ['test/setup.js', 'test/**/*-test.js', 'dist/test/**/*-test.js'],
   plugins: [
     multiEntry({
       exports: false

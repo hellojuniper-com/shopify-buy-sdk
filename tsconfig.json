@@ -8,8 +8,8 @@
     "checkJs": false,
     "declaration": true,
     "declarationMap": false,
-    "declarationDir": "./typescript/types",
-    "outDir": "./typescript",
+    "declarationDir": "./dist/types",
+    "outDir": "./dist",
     "rootDir": "./typescript",
     "strict": true,
     "esModuleInterop": true,
@@ -26,6 +26,7 @@
     "dist",
     ".tmp",
     "typescript/**/*.js",
-    "typescript/types"
+    "typescript/**/*.test.ts",
+    "typescript/**/*.spec.ts"
   ]
 }

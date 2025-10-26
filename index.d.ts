@@ -1,4 +1,4 @@
-/// <reference path="./typescript/types/src/pre-order-timeline.d.ts" />
+/// <reference path="./dist/types/src/pre-order-timeline.d.ts" />
 
 import type {
     MediaImage,
@@ -8,8 +8,11 @@ import type {
     MetafieldReference,
     MetaobjectField,
     Metafield
-} from './typescript/types/shared/types';
-import PreOrderTimelineClass from './typescript/types/src/pre-order-timeline';
+} from './dist/types/shared/types';
+import PreOrderTimelineClass, {
+    VariantPreOrderMetafields,
+    PreOrderBatch
+} from './dist/types/src/pre-order-timeline';
 
 declare namespace ShopifyBuy {
     export function buildClient(config: Config): Client;
@@ -57,7 +60,7 @@ declare namespace ShopifyBuy {
     export interface CollectionResource {
         fetch(id: string): Promise<Product[]>;
         fetchWithProducts(id: string, options?: {productsFirst: number}): Promise<any[]>;
-        fetchWithProductsForCollectionView(id, options?: {productsFirst: number}): Promise<any[]>;
+        fetchWithProductsForCollectionView(id: string, options?: {productsFirst: number}): Promise<any[]>;
         fetchAll(options?: {first: number, productsFirst: number}): Promise<any[]>;
         fetchAllWithProducts(): Promise<any[]>; // TODO fix to be a type: DOC: Fetches all collections on the shop, including products.
         fetchByHandle(handle: string): Promise<any[]>; // TODO fix to be a type: DOC: Fetches a collection by handle on the shop. Assuming it does not give products
@@ -548,7 +551,9 @@ declare namespace ShopifyBuy {
         MetafieldReferenceMetaobject,
         MetafieldReference,
         MetaobjectField,
-        Metafield
+        Metafield,
+        VariantPreOrderMetafields,
+        PreOrderBatch,
     };
 }
 

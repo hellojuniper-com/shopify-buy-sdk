@@ -59,7 +59,7 @@ const validateDate = (dateStr: string | null, fieldName: string): Date | null =>
  * @param key - Field key to search for
  * @returns Field value or null if not found
  */
-const getValueFromPreOrderBatch = (fields: MetaobjectField[], key: string): string | null =>
+const getFieldValue = (fields: MetaobjectField[], key: string): string | null =>
   fields.find(field => field.key === key)?.value ?? null;
 
 /**
@@ -68,18 +68,25 @@ const getValueFromPreOrderBatch = (fields: MetaobjectField[], key: string): stri
  * @returns PreOrderBatch object with validated dates
  * @throws Error if required fields are missing or dates are invalid
  */
-const parsePreOrderBatch = (fields: MetaobjectField[]): PreOrderBatch => {
+const parseMetaobjectFieldList = (fields: MetaobjectField[]): PreOrderBatch => {
 
-  const orderCutoffDateStr = getValueFromPreOrderBatch(fields, 'orderCutoffDate');
-  const estimatedShippingDateStr = getValueFromPreOrderBatch(fields, 'estimatedShippingDate');
+  const orderCutoffDateStr = getFieldValue(fields, 'orderCutoffDate');
+  const estimatedShippingDateStr = getFieldValue(fields, 'estimatedShippingDate');
 
   if (!estimatedShippingDateStr) {
     throw new Error('Each batch must have an estimatedShippingDate');
   }
 
+  const orderCutoffDate = validateDate(orderCutoffDateStr, 'orderCutoffDate');
+  const estimatedShippingDate = validateDate(estimatedShippingDateStr, 'estimatedShippingDate');
+
+  if (!estimatedShippingDate) {
+    throw new Error('estimatedShippingDate cannot be null');
+  }
+
   return {
-    orderCutoffDate: validateDate(orderCutoffDateStr, 'orderCutoffDate'),
-    estimatedShippingDate: validateDate(estimatedShippingDateStr, 'estimatedShippingDate')!,
+    orderCutoffDate,
+    estimatedShippingDate,
   };
 };
 
@@ -143,7 +150,8 @@ export class PreOrderTimeline {
 
   /**
    * Finds the pre-order timeline for a specific date and shipping location.
-   * @param shipsTo - The location to which the order is being shipped.
+   * @param shipsTo - The location (ISO 3166 two-letter country code) to which the order is being shipped.
+   *                  If the country code is invalid, we just assume that the location is outside the US.
    * @param orderDate - The date the order was placed.
    * @param variantPreOrderMetafields - The metafields associated with the variant.
    * @returns The pre-order timeline for the specified date and location.
@@ -181,6 +189,7 @@ export class PreOrderTimeline {
       }
 
       // 3. The order was made while the variant was in-stock, so return empty timeline.
+      //    Note that orders placed exactly on the transition date are considered pre-orders.
       if (inStockToPreOrderTransitionDate?.value && orderDate < new Date(inStockToPreOrderTransitionDate.value)) {
         return PreOrderTimeline.fromMetaobjectList(null);
       }
@@ -211,7 +220,7 @@ export class PreOrderTimeline {
       .filter(isMetafieldReferenceMetaobject)
       .map((metaobject, index) => {
         try {
-          return parsePreOrderBatch(metaobject.fields);
+          return parseMetaobjectFieldList(metaobject.fields);
         } catch (error) {
           console.error(`Error parsing batch at index ${index}:`, error);
           return null;
@@ -319,8 +328,8 @@ export class PreOrderTimeline {
 // Export private functions for testing
 export const __testing__ = {
   validateDate,
-  getFieldValue: getValueFromPreOrderBatch,
-  parseMetaobjectFields: parsePreOrderBatch,
+  getFieldValue,
+  parseMetaobjectFieldList,
   deduplicateOpenEndedBatches,
   sortBatchesByOrderCutoffDate,
 };

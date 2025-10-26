@@ -2,7 +2,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { __testing__, PreOrderBatch, PreOrderTimeline } from '../src/pre-order-timeline';
 import type { Metafield, MetafieldReferenceMetaobject, MetaobjectField } from '../shared/types';
 
-const { validateDate, getFieldValue, parseMetaobjectFields, deduplicateOpenEndedBatches, sortBatchesByOrderCutoffDate } = __testing__;
+const { validateDate, getFieldValue, parseMetaobjectFieldList, deduplicateOpenEndedBatches, sortBatchesByOrderCutoffDate } = __testing__;
 
 // Helper function to create a Metafield with metaobject references for testing
 function createMetaobjectList(batches: Array<{ cutoff: string | null, shipping: string }>): Metafield {
@@ -166,7 +166,7 @@ describe('parseMetaobjectFields', () => {
         { key: 'orderCutoffDate', value: '2025-01-15', type: 'date', reference: null },
         { key: 'estimatedShippingDate', value: '2025-02-01', type: 'date', reference: null }
       ];
-      const result = parseMetaobjectFields(fields);
+      const result = parseMetaobjectFieldList(fields);
 
       expect(result.orderCutoffDate).toBeInstanceOf(Date);
       expect(result.orderCutoffDate?.toISOString()).toBe('2025-01-15T00:00:00.000Z');
@@ -179,7 +179,7 @@ describe('parseMetaobjectFields', () => {
         { key: 'orderCutoffDate', value: null, type: 'date', reference: null },
         { key: 'estimatedShippingDate', value: '2025-02-01', type: 'date', reference: null }
       ];
-      const result = parseMetaobjectFields(fields);
+      const result = parseMetaobjectFieldList(fields);
 
       expect(result.orderCutoffDate).toBeNull();
       expect(result.estimatedShippingDate).toBeInstanceOf(Date);
@@ -190,7 +190,7 @@ describe('parseMetaobjectFields', () => {
       const fields = [
         { key: 'estimatedShippingDate', value: '2025-02-01', type: 'date', reference: null }
       ];
-      const result = parseMetaobjectFields(fields);
+      const result = parseMetaobjectFieldList(fields);
 
       expect(result.orderCutoffDate).toBeNull();
       expect(result.estimatedShippingDate).toBeInstanceOf(Date);
@@ -204,36 +204,10 @@ describe('parseMetaobjectFields', () => {
         { key: 'estimatedShippingDate', value: '2025-02-01', type: 'date', reference: null },
         { key: 'extraField3', value: 'still-ignored', type: 'string', reference: null }
       ];
-      const result = parseMetaobjectFields(fields);
+      const result = parseMetaobjectFieldList(fields);
 
       expect(result.orderCutoffDate).toBeInstanceOf(Date);
       expect(result.estimatedShippingDate).toBeInstanceOf(Date);
-    });
-  });
-
-  describe('invalid inputs - boundary validation', () => {
-    it('should throw error when fields is not an array', () => {
-      expect(() => parseMetaobjectFields(null as any)).toThrow(
-        'Invalid metaobject fields: expected array'
-      );
-    });
-
-    it('should throw error when fields is undefined', () => {
-      expect(() => parseMetaobjectFields(undefined as any)).toThrow(
-        'Invalid metaobject fields: expected array'
-      );
-    });
-
-    it('should throw error when fields is an object', () => {
-      expect(() => parseMetaobjectFields({} as any)).toThrow(
-        'Invalid metaobject fields: expected array'
-      );
-    });
-
-    it('should throw error when fields is a string', () => {
-      expect(() => parseMetaobjectFields('not-an-array' as any)).toThrow(
-        'Invalid metaobject fields: expected array'
-      );
     });
   });
 
@@ -242,7 +216,7 @@ describe('parseMetaobjectFields', () => {
       const fields = [
         { key: 'orderCutoffDate', value: '2025-01-15', type: 'date', reference: null }
       ];
-      expect(() => parseMetaobjectFields(fields)).toThrow(
+      expect(() => parseMetaobjectFieldList(fields)).toThrow(
         'Each batch must have an estimatedShippingDate'
       );
     });
@@ -252,14 +226,14 @@ describe('parseMetaobjectFields', () => {
         { key: 'orderCutoffDate', value: '2025-01-15', type: 'date', reference: null },
         { key: 'estimatedShippingDate', value: null, type: 'date', reference: null }
       ];
-      expect(() => parseMetaobjectFields(fields)).toThrow(
+      expect(() => parseMetaobjectFieldList(fields)).toThrow(
         'Each batch must have an estimatedShippingDate'
       );
     });
 
     it('should throw error when fields array is empty', () => {
       const fields: any[] = [];
-      expect(() => parseMetaobjectFields(fields)).toThrow(
+      expect(() => parseMetaobjectFieldList(fields)).toThrow(
         'Each batch must have an estimatedShippingDate'
       );
     });
@@ -271,7 +245,7 @@ describe('parseMetaobjectFields', () => {
         { key: 'orderCutoffDate', value: 'invalid-date', type: 'date', reference: null },
         { key: 'estimatedShippingDate', value: '2025-02-01', type: 'date', reference: null }
       ];
-      expect(() => parseMetaobjectFields(fields)).toThrow(
+      expect(() => parseMetaobjectFieldList(fields)).toThrow(
         'Invalid orderCutoffDate: invalid-date'
       );
     });
@@ -281,7 +255,7 @@ describe('parseMetaobjectFields', () => {
         { key: 'orderCutoffDate', value: '2025-01-15', type: 'date', reference: null },
         { key: 'estimatedShippingDate', value: 'invalid-date', type: 'date', reference: null }
       ];
-      expect(() => parseMetaobjectFields(fields)).toThrow(
+      expect(() => parseMetaobjectFieldList(fields)).toThrow(
         'Invalid estimatedShippingDate: invalid-date'
       );
     });

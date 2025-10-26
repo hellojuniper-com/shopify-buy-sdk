@@ -14,7 +14,7 @@ optimized-types.js
 # Compiled TypeScript files
 typescript/**/*.js
 typescript/**/*.js.map
-typescript/types/
+dist/
 
 # Build artifacts
 index*.js
