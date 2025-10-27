@@ -1,6 +1,6 @@
 /// <reference path="./dist/types/src/pre-order-timeline.d.ts" />
 
-import type {
+import {
     MediaImage,
     Video,
     MetafieldReferenceGenericFile,
