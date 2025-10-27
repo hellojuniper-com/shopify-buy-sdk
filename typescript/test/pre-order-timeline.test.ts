@@ -1,6 +1,6 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { __testing__, PreOrderBatch, PreOrderTimeline } from '../src/pre-order-timeline';
-import type { Metafield, MetafieldReferenceMetaobject, MetaobjectField } from '../shared/types';
+import { Metafield, MetafieldReferenceMetaobject, MetaobjectField } from '../shared/types';
 
 const { validateDate, getFieldValue, parseMetaobjectFieldList, deduplicateOpenEndedBatches, sortBatchesByOrderCutoffDate } = __testing__;
 
