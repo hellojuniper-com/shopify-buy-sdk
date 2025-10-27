@@ -557,6 +557,5 @@ declare namespace ShopifyBuy {
     };
 }
 
-declare module '@hellojuniper-com/shopify-buy' {
-    export = ShopifyBuy;
-}
+export = ShopifyBuy;
+export as namespace ShopifyBuy;
