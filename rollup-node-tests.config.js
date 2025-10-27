@@ -19,10 +19,12 @@ baseConfig.plugins.push(
   nodeResolve({
     jsnext: true,
     main: true,
-    preferBuiltins: true
+    preferBuiltins: true,
+    extensions: ['.js', '.ts']
   }),
   babel({
     babelrc: false,
+    exclude: 'node_modules/**',
     presets: [
       [`${process.cwd()}/node_modules/babel-preset-env/lib/index`, {
         targets: {

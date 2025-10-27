@@ -5,6 +5,7 @@ import CollectionResource from './collection-resource';
 import ShopResource from './shop-resource';
 import CheckoutResource from './checkout-resource';
 import ImageResource from './image-resource';
+import PreOrderTimelineClass from '../dist/src/pre-order-timeline';
 import {version} from '../package.json';
 
 // GraphQL
@@ -100,3 +101,6 @@ class Client {
 }
 
 export default Client;
+export {
+  PreOrderTimelineClass as PreOrderTimeline
+};

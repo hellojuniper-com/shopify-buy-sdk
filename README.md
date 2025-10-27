@@ -384,6 +384,67 @@ client.graphQLClient.send(productsQuery).then(({ model, data }) => {
 });
 ```
 
+## TypeScript Development
+
+This repository includes TypeScript code that requires compilation before the type definitions are available to consumers.
+
+### Build Process
+
+The project uses TypeScript to generate both JavaScript and type definition files. When you run the build command, TypeScript will:
+
+1. Compile TypeScript source files from `typescript/src/` to JavaScript
+2. Generate type definition files (`.d.ts`) in `typescript/types/`
+
+**Configuration** ([tsconfig.json](tsconfig.json)):
+```json
+{
+  "declaration": true,              // Generate .d.ts files
+  "declarationDir": "./typescript/types",  // Output location for types
+  "outDir": "./typescript"          // Output location for JS files
+}
+```
+
+### Build Commands
+
+```bash
+# Build TypeScript files only
+npm run build:ts
+
+# Full build (includes TypeScript + optimized/unoptimized builds)
+npm run build
+
+# Clean generated files (including typescript/types/)
+npm run clean
+```
+
+### Type Definition References
+
+The main type definitions in [index.d.ts](index.d.ts) reference the compiled TypeScript types:
+
+```typescript
+/// <reference path="./typescript/types/src/pre-order-timeline.d.ts" />
+
+import type { ... } from './typescript/types/shared/types';
+import PreOrderTimelineClass from './typescript/types/src/pre-order-timeline';
+```
+
+### Development Workflow
+
+1. **Before publishing**: Always run `npm run build` to ensure all type definitions are generated
+2. **During development**: Run `npm run build:ts` after modifying TypeScript files
+3. **Clean state**: Run `npm run clean` to remove all generated files
+
+### What Gets Generated (and Ignored)
+
+The `.gitignore` excludes generated files:
+```
+typescript/**/*.js
+typescript/**/*.js.map
+typescript/types/
+```
+
+These files are **not committed to git** and are generated during the build process. When publishing the package, ensure `npm run build` has been executed so that `typescript/types/` is included in the published package.
+
 ## Documentation
 
 - [API documentation](https://shopify.github.io/js-buy-sdk).

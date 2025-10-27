@@ -1,24 +1,28 @@
-// Type definitions for shopify-buy 2.10
-// Project: https://github.com/Shopify/js-buy-sdk#readme
-// Definitions by: Martin Köhn <https://github.com/openminder>
-//                 Stephen Traiforos <https://github.com/straiforos>
-//                 Juan Manuel Incaurgarat <https://github.com/kilinkis>
-//                 Chris Worman <https://github.com/chrisworman-pela>
-//                 Maciej Baron <https://github.com/MaciekBaron>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// TypeScript Version: 2.7
+/// <reference path="./dist/types/src/pre-order-timeline.d.ts" />
 
-/**
- * The JS Buy SDK is a lightweight library that allows you to build ecommerce into any website.
- * It is based on Shopify’s API and provides the ability to retrieve products and collections from
- * your shop, add products to a cart, and checkout. It can render data on the client side or
- * server. This will allow you to add ecommerce functionality to any website or javascript
- * application. This is helpful if you already have a website and need to add ecommerce or only
- * need a simple buy button on your site.
- */
+import type {
+    MediaImage,
+    Video,
+    MetafieldReferenceGenericFile,
+    MetafieldReferenceMetaobject,
+    MetafieldReference,
+    MetaobjectField,
+    Metafield
+} from './dist/types/shared/types';
+import PreOrderTimelineClass, {
+    VariantPreOrderMetafields,
+    PreOrderBatch
+} from './dist/types/src/pre-order-timeline';
 
 declare namespace ShopifyBuy {
     export function buildClient(config: Config): Client;
+
+    /**
+     * PreOrderTimeline class for managing pre-order timelines.
+     * Type definitions are auto-generated from typescript/src/pre-order-timeline.ts
+     */
+    type PreOrderTimelineConstructor = typeof PreOrderTimelineClass;
+    export const PreOrderTimeline: PreOrderTimelineConstructor;
 
     export interface Client {
         product: ShopifyBuy.ProductResource;
@@ -56,7 +60,7 @@ declare namespace ShopifyBuy {
     export interface CollectionResource {
         fetch(id: string): Promise<Product[]>;
         fetchWithProducts(id: string, options?: {productsFirst: number}): Promise<any[]>;
-        fetchWithProductsForCollectionView(id, options?: {productsFirst: number}): Promise<any[]>;
+        fetchWithProductsForCollectionView(id: string, options?: {productsFirst: number}): Promise<any[]>;
         fetchAll(options?: {first: number, productsFirst: number}): Promise<any[]>;
         fetchAllWithProducts(): Promise<any[]>; // TODO fix to be a type: DOC: Fetches all collections on the shop, including products.
         fetchByHandle(handle: string): Promise<any[]>; // TODO fix to be a type: DOC: Fetches a collection by handle on the shop. Assuming it does not give products
@@ -519,8 +523,6 @@ declare namespace ShopifyBuy {
         maxHeight: number;
     }
 
-    let NO_IMAGE_URI: string;
-
     /*
      *   Base Model for the higher level returned objects from the API using GraphQL
      */
@@ -542,74 +544,17 @@ declare namespace ShopifyBuy {
         value: string;
     }
 
-    /**
-     * https://shopify.dev/docs/api/storefront/2023-10/objects/MediaImage
-     */
-    export interface MediaImage {
-        id: string;
-        mediaContentType: string;
-        image?: Image;
-    }
-
-    /**
-     * https://shopify.dev/docs/api/storefront/2023-10/objects/Video
-    */
-    export interface Video {
-        id: string;
-        mediaContentType: string;
-        previewImage?: {
-            url: string;
-        }
-        sources: {
-            height: number,
-            width: number,
-            url: string;
-            format: string;
-        }[];
-    }
-
-    /**
-     * https://shopify.dev/docs/api/storefront/2023-10/objects/GenericFile
-     */
-    export interface MetafieldReferenceGenericFile {
-        id: string;
-        mimeType?: string;
-        url?: string;
-    }
-
-    /**
-     * https://shopify.dev/docs/api/storefront/2023-10/objects/Metaobject
-     */
-    export interface MetafieldReferenceMetaobject {
-        id: string;
-        fields: Array<MetaobjectField>;
-    }
-
-    /**
-     * https://shopify.dev/docs/api/storefront/2023-10/unions/MetafieldReference
-     */
-    export type MetafieldReference =
-        MediaImage |
-        Video |
-        MetafieldReferenceGenericFile |
-        MetafieldReferenceMetaobject;
-
-    /**
-     * https://shopify.dev/docs/api/storefront/2023-10/objects/MetaobjectField
-     */
-    export interface MetaobjectField {
-        key: string;
-        type: string;
-        value: string | null;
-        reference: MetafieldReference | null;
-    }
-
-    export interface Metafield extends MetaobjectField {
-        id: string;
-        namespace: string;
-        reference: MetafieldReference | null;
-        references?: Array<MetafieldReference> | null;
-    }
+    export {
+        MediaImage,
+        Video,
+        MetafieldReferenceGenericFile,
+        MetafieldReferenceMetaobject,
+        MetafieldReference,
+        MetaobjectField,
+        Metafield,
+        VariantPreOrderMetafields,
+        PreOrderBatch,
+    };
 }
 
 declare module '@hellojuniper-com/shopify-buy' {

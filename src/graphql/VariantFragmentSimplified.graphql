@@ -29,15 +29,26 @@ fragment VariantFragmentSimplified on ProductVariant {
     width
     height
   }
-  metafieldsWithReference: metafields(identifiers: [
+  metafieldsWithReference: metafields(
+    identifiers: [
       { namespace: "taiga", key: "preOrderStopCondition" },
       { namespace: "taiga", key: "preOrderDateEstimate" },
       { namespace: "productListing", key: "startingQuantity" },
       { namespace: "productListing", key: "endingQuantity" },
       { namespace: "productListing", key: "donationAmount" },
+      { namespace: "productListing", key: "inStockToPreOrderWWTransitionDate" },
+      { namespace: "productListing", key: "inStockToPreOrderUSTransitionDate" },
     ]
   ) {
     ...MetafieldWithReferenceFragment
+  }
+  metafieldsWithReferenceList: metafields(
+    identifiers: [
+      { namespace: "productListing", key: "preOrderWWTimeline" },
+      { namespace: "productListing", key: "preOrderUSTimeline" },
+    ]
+  ) {
+    ...MetafieldWithReferenceListFragment
   }
   quantity: quantityAvailable
 }

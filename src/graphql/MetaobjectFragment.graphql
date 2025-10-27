@@ -1,0 +1,11 @@
+fragment MetaobjectFragment on Metaobject {
+    fields {
+        key
+        type
+        value
+        reference {
+            ...MediaImageFragment
+            ...VideoFragment
+        }
+    }
+}
