@@ -24,7 +24,8 @@ secrets.ejson
 # Sources
 *.md
 *.txt
-src
+/src
+/typescript
 test
 script
 fixtures
