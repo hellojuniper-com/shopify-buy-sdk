@@ -149,6 +149,54 @@ export class PreOrderTimeline {
   }
 
   /**
+   * Helper method to find estimated shipping date from specific metafields.
+   * Implements the logic from the "Find Estimated Shipping Date" flowchart.
+   * @param preOrderTimeline - The pre-order timeline metafield
+   * @param inStockToPreOrderTransitionDate - The transition date metafield
+   * @param orderDate - The date the order was placed
+   * @returns PreOrderTimeline instance if valid, null otherwise
+   */
+  private static getByDateAndLocationInternal(
+    preOrderTimeline: Metafield | null | undefined,
+    inStockToPreOrderTransitionDate: Metafield | null | undefined,
+    orderDate: Date
+  ): PreOrderTimeline | null {
+    try {
+      // 1. Does variant have a Pre-Order Timeline?
+      if (!preOrderTimeline) {
+        // The variant is only available while in-stock, and therefore will never become a pre-order.
+        return null;
+      }
+
+      // 2. Does variant have a Pre-Order Transition Date?
+      if (!inStockToPreOrderTransitionDate?.value) {
+        // The variant is currently in stock, and therefore does not have a pre-order timeline.
+        return null;
+      }
+
+      // 3. Is Order Date before Pre-Order Transition Date?
+      //    Note that orders placed exactly on the transition date are considered pre-orders.
+      if (orderDate < new Date(inStockToPreOrderTransitionDate.value)) {
+        // The variant is still in-stock at the time of order, so no pre-order timeline applies.
+        return null;
+      }
+
+      // 4. Convert the metafield into a PreOrderTimeline instance, then check for applicable pre-order batch.
+      const timeline: PreOrderTimeline = PreOrderTimeline.fromMetaobjectList(preOrderTimeline, orderDate);
+      if (timeline.getBatchForOrderDate() === null) {
+        // No applicable pre-order batch found for the order date.
+        return null;
+      }
+
+      // 5. An applicable pre-order batch was found, so return the PreOrderTimeline instance.
+      return timeline;
+    } catch (error) {
+      console.error('Error creating pre-order timeline:', error);
+      return null;
+    }
+  }
+
+  /**
    * Finds the pre-order timeline for a specific date and shipping location.
    * @param shipsTo - The location (ISO 3166 two-letter country code) to which the order is being shipped.
    *                  If the country code is invalid, we just assume that the location is outside the US.
@@ -161,45 +209,36 @@ export class PreOrderTimeline {
     orderDate: Date,
     variantPreOrderMetafields: VariantPreOrderMetafields,
   ): PreOrderTimeline {
-    try {
-      const {
-        preOrderWWTimeline,
+    const {
+      preOrderWWTimeline,
+      preOrderUSTimeline,
+      inStockToPreOrderWWTransitionDate,
+      inStockToPreOrderUSTransitionDate,
+    } = variantPreOrderMetafields;
+
+    // 1. US customers: Try US metafields first.
+    if (shipsTo === 'US') {
+      const usTimeline: PreOrderTimeline | null = this.getByDateAndLocationInternal(
         preOrderUSTimeline,
-        inStockToPreOrderWWTransitionDate,
         inStockToPreOrderUSTransitionDate,
-      } = variantPreOrderMetafields;
+        orderDate
+      );
 
-      let preOrderTimeline: Metafield | undefined | null;
-      let inStockToPreOrderTransitionDate: Metafield | undefined | null;
-
-      // 1a. Customer is not in the US, or product does not have US fulfillment.
-      if (shipsTo !== 'US' || !preOrderUSTimeline) {
-        preOrderTimeline = preOrderWWTimeline;
-        inStockToPreOrderTransitionDate = inStockToPreOrderWWTransitionDate;
+      // 1a. If a US timeline is found, return it.
+      if (usTimeline) {
+        return usTimeline;
       }
-      // 1b. Customer is in the US and product has US fulfillment.
-      else {
-        preOrderTimeline = preOrderUSTimeline;
-        inStockToPreOrderTransitionDate = inStockToPreOrderUSTransitionDate;
-      }
-
-      // 2. There is no pre-order timeline for the product, so return empty timeline.
-      if (!preOrderTimeline) {
-        return PreOrderTimeline.fromMetaobjectList(null);
-      }
-
-      // 3. The order was made while the variant was in-stock, so return empty timeline.
-      //    Note that orders placed exactly on the transition date are considered pre-orders.
-      if (inStockToPreOrderTransitionDate?.value && orderDate < new Date(inStockToPreOrderTransitionDate.value)) {
-        return PreOrderTimeline.fromMetaobjectList(null);
-      }
-
-      // 4. Parse, validate, deduplicate, and sort using the PreOrderTimeline factory.
-      return PreOrderTimeline.fromMetaobjectList(preOrderTimeline, orderDate);
-    } catch (error) {
-      console.error('Error creating pre-order timeline:', error);
-      return PreOrderTimeline.fromMetaobjectList(null);
     }
+
+    // 2. International customers OR US customers with no valid US timeline: Use Int'l metafields
+    const wwTimeline: PreOrderTimeline | null = this.getByDateAndLocationInternal(
+      preOrderWWTimeline,
+      inStockToPreOrderWWTransitionDate,
+      orderDate
+    );
+
+    // 2a. If an Int'l timeline is found, return it; otherwise, return an empty timeline.
+    return wwTimeline ?? PreOrderTimeline.fromMetaobjectList(null);
   }
 
   /**

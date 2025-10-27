@@ -957,8 +957,8 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
         {
           preOrderUSTimeline: usTimeline,
           preOrderWWTimeline: wwTimeline,
-          inStockToPreOrderWWTransitionDate: null,
-          inStockToPreOrderUSTransitionDate: null
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null }
         }
       );
 
@@ -977,8 +977,8 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
         {
           preOrderUSTimeline: usTimeline,
           preOrderWWTimeline: wwTimeline,
-          inStockToPreOrderWWTransitionDate: null,
-          inStockToPreOrderUSTransitionDate: null
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null }
         }
       );
 
@@ -996,7 +996,7 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
         {
           preOrderUSTimeline: null,
           preOrderWWTimeline: wwTimeline,
-          inStockToPreOrderWWTransitionDate: null,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
           inStockToPreOrderUSTransitionDate: null
         }
       );
@@ -1016,13 +1016,180 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
           {
             preOrderWWTimeline: wwTimeline,
             preOrderUSTimeline: null,
-            inStockToPreOrderWWTransitionDate: null,
+            inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
             inStockToPreOrderUSTransitionDate: null
           }
         );
 
         expect(timeline.getBatches().length).toBe(1);
       });
+    });
+  });
+
+  describe('US customer fallback scenarios', () => {
+    it('should fallback to WW timeline when US timeline has no transition date', () => {
+      const usTimeline = createMetaobjectList([{ cutoff: '2025-01-15', shipping: '2025-02-01' }]);
+      const wwTimeline = createMetaobjectList([{ cutoff: '2025-01-20', shipping: '2025-02-10' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'US',
+        new Date('2025-01-01'),
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: null // No US transition date
+        }
+      );
+
+      const batches = timeline.getBatches();
+      expect(batches.length).toBe(1);
+      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-20')); // WW timeline used
+    });
+
+    it('should fallback to WW timeline when order date is before US transition date', () => {
+      const usTimeline = createMetaobjectList([{ cutoff: '2025-01-15', shipping: '2025-02-01' }]);
+      const wwTimeline = createMetaobjectList([{ cutoff: '2025-01-20', shipping: '2025-02-10' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'US',
+        new Date('2025-01-01'), // Order date before US transition
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-15', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2025-01-10', type: 'date', reference: null }
+        }
+      );
+
+      const batches = timeline.getBatches();
+      expect(batches.length).toBe(1);
+      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-20')); // WW timeline used
+    });
+
+    it('should fallback to WW timeline when order date is after all US cutoff dates', () => {
+      const usTimeline = createMetaobjectList([
+        { cutoff: '2025-01-15', shipping: '2025-02-01' },
+        { cutoff: '2025-02-15', shipping: '2025-03-01' }
+      ]);
+      const wwTimeline = createMetaobjectList([{ cutoff: null, shipping: '2025-04-01' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'US',
+        new Date('2025-03-01'), // Order date after all US cutoffs
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-15', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2024-12-15', type: 'date', reference: null }
+        }
+      );
+
+      const batches = timeline.getBatches();
+      expect(batches.length).toBe(1);
+      expect(batches[0].orderCutoffDate).toBeNull(); // WW timeline open-ended batch
+      expect(batches[0].estimatedShippingDate).toEqual(new Date('2025-04-01'));
+    });
+
+    it('should return empty timeline when both US and WW timelines fail validation', () => {
+      const usTimeline = createMetaobjectList([{ cutoff: '2025-01-15', shipping: '2025-02-01' }]);
+      const wwTimeline = createMetaobjectList([{ cutoff: '2025-01-20', shipping: '2025-02-10' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'US',
+        new Date('2025-01-01'),
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: null, // No WW transition
+          inStockToPreOrderUSTransitionDate: null  // No US transition
+        }
+      );
+
+      expect(timeline.isEmpty()).toBe(true);
+    });
+
+    it('should use US timeline when both US and WW are valid', () => {
+      const usTimeline = createMetaobjectList([{ cutoff: '2025-01-15', shipping: '2025-02-01' }]);
+      const wwTimeline = createMetaobjectList([{ cutoff: '2025-01-20', shipping: '2025-02-10' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'US',
+        new Date('2025-01-01'),
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null }
+        }
+      );
+
+      const batches = timeline.getBatches();
+      expect(batches.length).toBe(1);
+      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-15')); // US timeline preferred
+    });
+
+    it('should fallback when US timeline exists but WW has better match', () => {
+      const usTimeline = createMetaobjectList([
+        { cutoff: '2025-01-05', shipping: '2025-02-01' }
+      ]);
+      const wwTimeline = createMetaobjectList([
+        { cutoff: '2025-01-20', shipping: '2025-02-10' },
+        { cutoff: null, shipping: '2025-03-01' }
+      ]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'US',
+        new Date('2025-01-10'), // After US cutoff, but before WW cutoff
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null }
+        }
+      );
+
+      const batches = timeline.getBatches();
+      expect(batches.length).toBe(2);
+      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-20')); // WW timeline
+    });
+  });
+
+  describe('International customer scenarios', () => {
+    it('should not fallback to US timeline for international customers', () => {
+      const usTimeline = createMetaobjectList([{ cutoff: '2025-01-15', shipping: '2025-02-01' }]);
+      const wwTimeline = createMetaobjectList([{ cutoff: '2025-01-20', shipping: '2025-02-10' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'CA',
+        new Date('2025-02-25'), // After all cutoffs
+        {
+          preOrderUSTimeline: usTimeline,
+          preOrderWWTimeline: wwTimeline,
+          inStockToPreOrderWWTransitionDate: { id: 'gid://shopify/Metafield/2', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null },
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2024-12-01', type: 'date', reference: null }
+        }
+      );
+
+      // Should return empty since order is after all WW cutoffs, even though US timeline exists
+      expect(timeline.isEmpty()).toBe(true);
+    });
+
+    it('should return empty timeline when WW timeline has no transition date', () => {
+      const wwTimeline = createMetaobjectList([{ cutoff: '2025-01-20', shipping: '2025-02-10' }]);
+
+      const timeline = PreOrderTimeline.getByDateAndLocation(
+        'GB',
+        new Date('2025-01-01'),
+        {
+          preOrderWWTimeline: wwTimeline,
+          preOrderUSTimeline: null,
+          inStockToPreOrderWWTransitionDate: null, // No transition date
+          inStockToPreOrderUSTransitionDate: null
+        }
+      );
+
+      expect(timeline.isEmpty()).toBe(true);
     });
   });
 
@@ -1133,7 +1300,7 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
       expect(timeline.isEmpty()).toBe(true);
     });
 
-    it('should return timeline when no transition date exists', () => {
+    it('should return empty timeline when no transition date exists', () => {
       const usTimeline = createMetaobjectList([{ cutoff: null, shipping: '2025-02-01' }]);
 
       const timeline = PreOrderTimeline.getByDateAndLocation(
@@ -1147,11 +1314,10 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
         }
       );
 
-      expect(timeline.isEmpty()).toBe(false);
-      expect(timeline.getBatches().length).toBe(1);
+      expect(timeline.isEmpty()).toBe(true);
     });
 
-    it('should return timeline when transition date is null', () => {
+    it('should return empty timeline when transition date is null', () => {
       const usTimeline = createMetaobjectList([{ cutoff: null, shipping: '2025-02-01' }]);
 
       const timeline = PreOrderTimeline.getByDateAndLocation(
@@ -1165,7 +1331,7 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
         }
       );
 
-      expect(timeline.isEmpty()).toBe(false);
+      expect(timeline.isEmpty()).toBe(true);
     });
   });
 
@@ -1180,7 +1346,7 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
         {
           preOrderUSTimeline: usTimeline,
           preOrderWWTimeline: null,
-          inStockToPreOrderUSTransitionDate: null,
+          inStockToPreOrderUSTransitionDate: { id: 'gid://shopify/Metafield/1', namespace: 'custom', key: 'transition', value: '2025-01-01', type: 'date', reference: null },
           inStockToPreOrderWWTransitionDate: null
         }
       );
