@@ -1590,7 +1590,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Early January');
+      expect(timeline.getFormattedShippingDate()).toBe('early January');
     });
 
     it('should format mid month dates (11-20)', () => {
@@ -1599,7 +1599,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Mid February');
+      expect(timeline.getFormattedShippingDate()).toBe('mid February');
     });
 
     it('should format late month dates (21-31)', () => {
@@ -1608,7 +1608,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Late March');
+      expect(timeline.getFormattedShippingDate()).toBe('late March');
     });
 
     it('should handle day 1 as early', () => {
@@ -1617,7 +1617,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Early April');
+      expect(timeline.getFormattedShippingDate()).toBe('early April');
     });
 
     it('should handle day 10 as early', () => {
@@ -1626,7 +1626,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Early May');
+      expect(timeline.getFormattedShippingDate()).toBe('early May');
     });
 
     it('should handle day 11 as mid', () => {
@@ -1635,7 +1635,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Mid June');
+      expect(timeline.getFormattedShippingDate()).toBe('mid June');
     });
 
     it('should handle day 20 as mid', () => {
@@ -1644,7 +1644,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Mid July');
+      expect(timeline.getFormattedShippingDate()).toBe('mid July');
     });
 
     it('should handle day 21 as late', () => {
@@ -1653,7 +1653,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Late August');
+      expect(timeline.getFormattedShippingDate()).toBe('late August');
     });
 
     it('should handle day 31 as late', () => {
@@ -1662,7 +1662,7 @@ describe('PreOrderTimeline instance methods', () => {
         new Date('2025-01-01')
       );
 
-      expect(timeline.getFormattedShippingDate()).toBe('Late December');
+      expect(timeline.getFormattedShippingDate()).toBe('late December');
     });
 
     it('should return null when timeline is empty', () => {
@@ -1682,18 +1682,18 @@ describe('PreOrderTimeline instance methods', () => {
 
     it('should format different months correctly', () => {
       const months = [
-        { date: '2025-01-15', expected: 'Mid January' },
-        { date: '2025-02-05', expected: 'Early February' },
-        { date: '2025-03-25', expected: 'Late March' },
-        { date: '2025-04-12', expected: 'Mid April' },
-        { date: '2025-05-30', expected: 'Late May' },
-        { date: '2025-06-08', expected: 'Early June' },
-        { date: '2025-07-18', expected: 'Mid July' },
-        { date: '2025-08-22', expected: 'Late August' },
-        { date: '2025-09-03', expected: 'Early September' },
-        { date: '2025-10-14', expected: 'Mid October' },
-        { date: '2025-11-28', expected: 'Late November' },
-        { date: '2025-12-10', expected: 'Early December' }
+        { date: '2025-01-15', expected: 'mid January' },
+        { date: '2025-02-05', expected: 'early February' },
+        { date: '2025-03-25', expected: 'late March' },
+        { date: '2025-04-12', expected: 'mid April' },
+        { date: '2025-05-30', expected: 'late May' },
+        { date: '2025-06-08', expected: 'early June' },
+        { date: '2025-07-18', expected: 'mid July' },
+        { date: '2025-08-22', expected: 'late August' },
+        { date: '2025-09-03', expected: 'early September' },
+        { date: '2025-10-14', expected: 'mid October' },
+        { date: '2025-11-28', expected: 'late November' },
+        { date: '2025-12-10', expected: 'early December' }
       ];
 
       months.forEach(({ date, expected }) => {
@@ -1702,6 +1702,209 @@ describe('PreOrderTimeline instance methods', () => {
           new Date('2025-01-01')
         );
         expect(timeline.getFormattedShippingDate()).toBe(expected);
+      });
+    });
+
+    describe('with format options', () => {
+      describe('month format', () => {
+        it('should format with long month names by default', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate()).toBe('mid January');
+          expect(timeline.getFormattedShippingDate({ month: 'long' })).toBe('mid January');
+        });
+
+        it('should format with short month names when specified', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ month: 'short' })).toBe('mid Jan');
+        });
+
+        it('should format different months with short names', () => {
+          const months = [
+            { date: '2025-01-05', expected: 'early Jan' },
+            { date: '2025-02-15', expected: 'mid Feb' },
+            { date: '2025-03-25', expected: 'late Mar' },
+            { date: '2025-04-10', expected: 'early Apr' },
+            { date: '2025-05-20', expected: 'mid May' },
+            { date: '2025-06-30', expected: 'late Jun' },
+            { date: '2025-07-08', expected: 'early Jul' },
+            { date: '2025-08-18', expected: 'mid Aug' },
+            { date: '2025-09-28', expected: 'late Sep' },
+            { date: '2025-10-05', expected: 'early Oct' },
+            { date: '2025-11-15', expected: 'mid Nov' },
+            { date: '2025-12-25', expected: 'late Dec' }
+          ];
+
+          months.forEach(({ date, expected }) => {
+            const timeline = PreOrderTimeline.fromMetaobjectList(
+              createMetaobjectList([{ cutoff: null, shipping: date }]),
+              new Date('2025-01-01')
+            );
+            expect(timeline.getFormattedShippingDate({ month: 'short' })).toBe(expected);
+          });
+        });
+      });
+
+      describe('capitalize option', () => {
+        it('should not capitalize period by default', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-05' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate()).toBe('early January');
+          expect(timeline.getFormattedShippingDate({ capitalize: false })).toBe('early January');
+        });
+
+        it('should capitalize period when specified', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-05' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ capitalize: true })).toBe('Early January');
+        });
+
+        it('should capitalize all periods correctly', () => {
+          const testCases = [
+            { date: '2025-01-05', expectedCapitalized: 'Early January', expectedLowercase: 'early January' },
+            { date: '2025-02-15', expectedCapitalized: 'Mid February', expectedLowercase: 'mid February' },
+            { date: '2025-03-25', expectedCapitalized: 'Late March', expectedLowercase: 'late March' }
+          ];
+
+          testCases.forEach(({ date, expectedCapitalized, expectedLowercase }) => {
+            const timeline = PreOrderTimeline.fromMetaobjectList(
+              createMetaobjectList([{ cutoff: null, shipping: date }]),
+              new Date('2025-01-01')
+            );
+            expect(timeline.getFormattedShippingDate({ capitalize: true })).toBe(expectedCapitalized);
+            expect(timeline.getFormattedShippingDate({ capitalize: false })).toBe(expectedLowercase);
+          });
+        });
+      });
+
+      describe('combined options', () => {
+        it('should format with short month and capitalize', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ month: 'short', capitalize: true })).toBe('Mid Jan');
+        });
+
+        it('should format with short month and no capitalize', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ month: 'short', capitalize: false })).toBe('mid Jan');
+        });
+
+        it('should format with long month and capitalize', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ month: 'long', capitalize: true })).toBe('Mid January');
+        });
+
+        it('should handle all combinations for different periods', () => {
+          const testCases = [
+            {
+              date: '2025-01-05',
+              combinations: [
+                { options: { month: 'long' as const, capitalize: false }, expected: 'early January' },
+                { options: { month: 'long' as const, capitalize: true }, expected: 'Early January' },
+                { options: { month: 'short' as const, capitalize: false }, expected: 'early Jan' },
+                { options: { month: 'short' as const, capitalize: true }, expected: 'Early Jan' }
+              ]
+            },
+            {
+              date: '2025-02-15',
+              combinations: [
+                { options: { month: 'long' as const, capitalize: false }, expected: 'mid February' },
+                { options: { month: 'long' as const, capitalize: true }, expected: 'Mid February' },
+                { options: { month: 'short' as const, capitalize: false }, expected: 'mid Feb' },
+                { options: { month: 'short' as const, capitalize: true }, expected: 'Mid Feb' }
+              ]
+            },
+            {
+              date: '2025-03-25',
+              combinations: [
+                { options: { month: 'long' as const, capitalize: false }, expected: 'late March' },
+                { options: { month: 'long' as const, capitalize: true }, expected: 'Late March' },
+                { options: { month: 'short' as const, capitalize: false }, expected: 'late Mar' },
+                { options: { month: 'short' as const, capitalize: true }, expected: 'Late Mar' }
+              ]
+            }
+          ];
+
+          testCases.forEach(({ date, combinations }) => {
+            const timeline = PreOrderTimeline.fromMetaobjectList(
+              createMetaobjectList([{ cutoff: null, shipping: date }]),
+              new Date('2025-01-01')
+            );
+
+            combinations.forEach(({ options, expected }) => {
+              expect(timeline.getFormattedShippingDate(options)).toBe(expected);
+            });
+          });
+        });
+      });
+
+      describe('partial options - testing fallback values', () => {
+        it('should use default month when only capitalize is provided', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ capitalize: true })).toBe('Mid January');
+          expect(timeline.getFormattedShippingDate({ capitalize: false })).toBe('mid January');
+        });
+
+        it('should use default capitalize when only month is provided', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate({ month: 'long' })).toBe('mid January');
+          expect(timeline.getFormattedShippingDate({ month: 'short' })).toBe('mid Jan');
+        });
+      });
+
+      describe('null cases with options', () => {
+        it('should return null for empty timeline regardless of options', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(null);
+
+          expect(timeline.getFormattedShippingDate()).toBeNull();
+          expect(timeline.getFormattedShippingDate({ month: 'short' })).toBeNull();
+          expect(timeline.getFormattedShippingDate({ capitalize: true })).toBeNull();
+          expect(timeline.getFormattedShippingDate({ month: 'short', capitalize: true })).toBeNull();
+        });
+
+        it('should return null when no applicable batch regardless of options', () => {
+          const timeline = PreOrderTimeline.fromMetaobjectList(
+            createMetaobjectList([]),
+            new Date('2025-01-01')
+          );
+
+          expect(timeline.getFormattedShippingDate()).toBeNull();
+          expect(timeline.getFormattedShippingDate({ month: 'short' })).toBeNull();
+          expect(timeline.getFormattedShippingDate({ capitalize: true })).toBeNull();
+          expect(timeline.getFormattedShippingDate({ month: 'short', capitalize: true })).toBeNull();
+        });
       });
     });
   });

@@ -37,6 +37,11 @@ export interface PreOrderBatch {
   estimatedShippingDate: Date;
 }
 
+interface FormatedShippingDateOptions {
+  month?: 'long' | 'short';
+  capitalize?: boolean;
+}
+
 /**
  * Validates a date string and returns a Date object
  * @param dateStr - Date string to validate
@@ -301,17 +306,20 @@ export class PreOrderTimeline {
   }
 
   /**
-   * Formats a date to a readable format using Early/Mid/Late month
-   * @returns Formatted date (e.g., "Early January", "Mid March", "Late December")
+   * Formats a date to a readable format using early/mid/late month
+   * @returns Formatted date (e.g., "early January", "mid March", "late December")
    */
-  getFormattedShippingDate(): string | null {
+  getFormattedShippingDate({
+    month = 'long',
+    capitalize = false,
+  }: FormatedShippingDateOptions = {}): string | null {
     const date: Date | null = this.getEstimatedShippingDate();
     if (!date) {
       return null;
     }
 
     const day = date.getDate();
-    const month = date.toLocaleDateString('en-US', { month: 'long' });
+    const monthStr = date.toLocaleDateString('en-US', { month });
 
     // Determine Early (1-10), Mid (11-20), or Late (21-31)
     let period: string;
@@ -323,7 +331,7 @@ export class PreOrderTimeline {
       period = 'Late';
     }
 
-    return `${period} ${month}`;
+    return `${capitalize ? period : period.toLowerCase()} ${monthStr}`;
   }
 
   /**
