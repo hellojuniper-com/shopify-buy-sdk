@@ -19,13 +19,13 @@ query {
       url
     }
   }
-  privacyPolicyPage: page(id: "gid://shopify/Page/49486823485") {
+  privacyPolicyPage: pageByHandle(handle: "privacy-policy") {
     ...DocumentPageFragment
   }
-  termsOfServicePage: page(id: "gid://shopify/Page/49486856253") {
+  termsOfServicePage: pageByHandle(handle: "terms-of-service") {
     ...DocumentPageFragment
   }
-  faqPage: page(id: "gid://shopify/Page/49486757949") {
+  faqPage: pageByHandle(handle: "faq") {
     ...DocumentPageFragment
   }
 }
