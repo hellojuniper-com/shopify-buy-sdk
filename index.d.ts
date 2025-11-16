@@ -11,8 +11,8 @@ import {
     Metafield,
     VariantShippingMetafields
 } from './dist/types/shared/types';
-import PreOrderTimelineClass, { PreOrderBatch } from './dist/types/src/pre-order-timeline';
-import ShippingInfoClass from './dist/types/src/shipping-info';
+import { PreOrderTimeline as PreOrderTimelineClass, PreOrderBatch } from './dist/types/src/pre-order-timeline';
+import { ShippingInfo as ShippingInfoClass } from './dist/types/src/shipping-info';
 
 declare namespace ShopifyBuy {
     export function buildClient(config: Config): Client;

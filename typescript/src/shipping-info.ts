@@ -23,16 +23,20 @@ export class ShippingInfo {
         this.deliveryInfo = deliveryInfo;
     }
 
+    public isInStock(): boolean {
+        return (this.preOrderShipOutDate === null);
+    }
+
     public getShipOutDate(): Date {
         const inStockShipOutDate = new Date(this.orderDate);
         inStockShipOutDate.setDate(this.orderDate.getDate() + this.processingInfo.minDays);
         return this.preOrderShipOutDate ? this.preOrderShipOutDate : inStockShipOutDate;
     }
 
-    public getArrivalDate(): Date | null {
-        const inStockArrivalDate = this.getShipOutDate();
-        inStockArrivalDate.setDate(inStockArrivalDate.getDate() + this.deliveryInfo.maxDays);
-        return this.preOrderShipOutDate ? null : inStockArrivalDate;
+    public getArrivalDate(): Date {
+        const arrivalDate = this.getShipOutDate();
+        arrivalDate.setDate(arrivalDate.getDate() + this.deliveryInfo.maxDays);
+        return arrivalDate;
     }
 
     public getMinProcessingDays(): number {
