@@ -38,6 +38,7 @@ fragment VariantFragmentSimplified on ProductVariant {
       { namespace: "productListing", key: "donationAmount" },
       { namespace: "productListing", key: "inStockToPreOrderWWTransitionDate" },
       { namespace: "productListing", key: "inStockToPreOrderUSTransitionDate" },
+      { namespace: "productListing", key: "isFulfillingFromUS" },
     ]
   ) {
     ...MetafieldWithReferenceFragment

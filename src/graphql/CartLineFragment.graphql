@@ -49,8 +49,9 @@ fragment CartLineFragment on BaseCartLine {
         referenceValue
       }
       metafieldsWithReference: metafields(identifiers: [
-        {namespace: "productListing", key: "inStockToPreOrderWWTransitionDate"},
-        {namespace: "productListing", key: "inStockToPreOrderUSTransitionDate"},
+        { namespace: "productListing", key: "inStockToPreOrderWWTransitionDate" },
+        { namespace: "productListing", key: "inStockToPreOrderUSTransitionDate" },
+        { namespace: "productListing", key: "isFulfillingFromUS" },
       ]) {
         ...MetafieldWithReferenceFragment
       }
