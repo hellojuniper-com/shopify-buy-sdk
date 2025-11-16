@@ -2,24 +2,10 @@ import {
   Metafield,
   MetaobjectField,
   MetafieldReferenceMetaobject,
-  MetafieldReference
+  MetafieldReference,
+  VariantShippingMetafields
 } from '../shared/types';
-
-/**
- * Type guard to check if a MetafieldReference is a MetafieldReferenceMetaobject
- */
-const isMetafieldReferenceMetaobject = (
-  ref: MetafieldReference
-): ref is MetafieldReferenceMetaobject => {
-  return 'fields' in ref;
-};
-
-export interface VariantPreOrderMetafields {
-  preOrderWWTimeline: Metafield | null;
-  preOrderUSTimeline: Metafield | null;
-  inStockToPreOrderWWTransitionDate: Metafield | null;
-  inStockToPreOrderUSTransitionDate: Metafield | null;
-}
+import { getFieldValue, isMetafieldReferenceMetaobject, validateDate } from './metafield-utils';
 
 /**
  * Represents a single pre-order batch
@@ -41,31 +27,6 @@ interface FormatedShippingDateOptions {
   month?: 'long' | 'short';
   capitalize?: boolean;
 }
-
-/**
- * Validates a date string and returns a Date object
- * @param dateStr - Date string to validate
- * @param fieldName - Name of the field for error messages
- * @returns Valid Date object
- * @throws Error if date is invalid
- */
-const validateDate = (dateStr: string | null, fieldName: string): Date | null => {
-  if (dateStr === null) return null;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) {
-    throw new Error(`Invalid ${fieldName}: ${dateStr}`);
-  }
-  return date;
-};
-
-/**
- * Extracts a field value by key from metaobject fields
- * @param fields - Array of metaobject fields
- * @param key - Field key to search for
- * @returns Field value or null if not found
- */
-const getFieldValue = (fields: MetaobjectField[], key: string): string | null =>
-  fields.find(field => field.key === key)?.value ?? null;
 
 /**
  * Parses metaobject fields into a validated PreOrderBatch
@@ -212,7 +173,7 @@ export class PreOrderTimeline {
   static getByDateAndLocation(
     shipsTo: string,
     orderDate: Date,
-    variantPreOrderMetafields: VariantPreOrderMetafields,
+    variantPreOrderMetafields: VariantShippingMetafields,
   ): PreOrderTimeline {
     const {
       preOrderWWTimeline,
@@ -374,8 +335,6 @@ export class PreOrderTimeline {
 
 // Export private functions for testing
 export const __testing__ = {
-  validateDate,
-  getFieldValue,
   parseMetaobjectFieldList,
   deduplicateOpenEndedBatches,
   sortBatchesByOrderCutoffDate,

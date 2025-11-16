@@ -82,3 +82,30 @@ export interface Image {
   src: string;
   altText: string;
 }
+
+export interface VariantShippingMetafields {
+  preOrderWWTimeline: Metafield | null;
+  preOrderUSTimeline: Metafield | null;
+  inStockToPreOrderWWTransitionDate: Metafield | null;
+  inStockToPreOrderUSTransitionDate: Metafield | null;
+  isFulfillingFromUS: Metafield | null;
+  processingTimeString: Metafield | null;
+}
+
+export type DayRange = { minDays: number; maxDays: number; };
+
+export type DeliveryConfig = {
+  "US": {
+    "US": DayRange;
+  },
+  "CN": {
+    "US": DayRange;
+    "UK": DayRange;
+    "WW": DayRange;
+  }
+};
+
+export type ProcessingConfig = {
+  "US": DayRange;
+  "CN": DayRange;
+};
