@@ -62,16 +62,16 @@ export class ShippingInfo {
         deliveryConfig: DeliveryConfig = DefaultDeliveryTimes,
         processingConfig: ProcessingConfig = DefaultProcessingTimes,
     ): ShippingInfo {
-        let preOrderTimeline = null;
-        let deliveryTimes;
-        let processingTimes;
+        let deliveryTimes: { minDays: number; maxDays: number };
+        let processingTimes: { minDays: number; maxDays: number };
+        let shipOutDate: Date | null = null;
 
-        const hasUSInventory = getBooleanValue(variantShippingMetafields.isFulfillingFromUS);
+        const hasAvailableUSInventory = getBooleanValue(variantShippingMetafields.isFulfillingFromUS);
 
         switch(shipsTo) {
             case 'US':
                 deliveryTimes = getDeliveryByLocation('CN', 'US', deliveryConfig);
-                processingTimes = getProcessingByLocation(hasUSInventory ? 'US' : 'CN', processingConfig);
+                processingTimes = getProcessingByLocation(hasAvailableUSInventory ? 'US' : 'CN', processingConfig);
                 break;
             case 'UK':
                 deliveryTimes = getDeliveryByLocation('CN', 'UK', deliveryConfig);
@@ -83,16 +83,15 @@ export class ShippingInfo {
                 break;
         }
 
-        // If shipping to the US and there is in-stock inventory in the US, then no pre-order timeline is needed.
-        if (shipsTo !== 'US' || !hasUSInventory) {
-            preOrderTimeline = PreOrderTimeline.getByDateAndLocation(shipsTo, orderDate, variantShippingMetafields);
+        const preOrderTimeline = PreOrderTimeline.getByDateAndLocation(shipsTo, orderDate, variantShippingMetafields);
+        
+        const preOrderShipOutDate = preOrderTimeline.getEstimatedShippingDate();
+        if (preOrderShipOutDate) {
+            shipOutDate = preOrderShipOutDate;
+        } else if (shipsTo === 'US' && hasAvailableUSInventory) {
+            shipOutDate = new Date();
         }
 
-        return new ShippingInfo(
-            orderDate,
-            preOrderTimeline ? preOrderTimeline.getEstimatedShippingDate() : null,
-            processingTimes,
-            deliveryTimes,
-        );
+        return new ShippingInfo(orderDate, shipOutDate, processingTimes, deliveryTimes);
     }
 }
