@@ -64,7 +64,6 @@ export class ShippingInfo {
     ): ShippingInfo {
         let deliveryTimes: { minDays: number; maxDays: number };
         let processingTimes: { minDays: number; maxDays: number };
-        let shipOutDate: Date | null = null;
 
         const hasAvailableUSInventory = getBooleanValue(variantShippingMetafields.isFulfillingFromUS);
 
@@ -84,14 +83,8 @@ export class ShippingInfo {
         }
 
         const preOrderTimeline = PreOrderTimeline.getByDateAndLocation(shipsTo, orderDate, variantShippingMetafields);
-        
         const preOrderShipOutDate = preOrderTimeline.getEstimatedShippingDate();
-        if (preOrderShipOutDate) {
-            shipOutDate = preOrderShipOutDate;
-        } else if (shipsTo === 'US' && hasAvailableUSInventory) {
-            shipOutDate = new Date();
-        }
 
-        return new ShippingInfo(orderDate, shipOutDate, processingTimes, deliveryTimes);
+        return new ShippingInfo(orderDate, preOrderShipOutDate, processingTimes, deliveryTimes);
     }
 }

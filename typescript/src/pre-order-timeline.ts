@@ -180,6 +180,7 @@ export class PreOrderTimeline {
       preOrderUSTimeline,
       inStockToPreOrderWWTransitionDate,
       inStockToPreOrderUSTransitionDate,
+      isFulfillingFromUS,
     } = variantPreOrderMetafields;
 
     // 1. US customers: Try US metafields first.
@@ -193,6 +194,12 @@ export class PreOrderTimeline {
       // 1a. If a US timeline is found, return it.
       if (usTimeline) {
         return usTimeline;
+      }
+
+      // 1b. If no US timeline is found but there is currently US inventory, return an empty
+      //     timeline, since an estimated shipping date does not exist since the item is in stock.
+      if (isFulfillingFromUS) {
+        return PreOrderTimeline.fromMetaobjectList(null);
       }
     }
 
