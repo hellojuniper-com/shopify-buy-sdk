@@ -109,3 +109,8 @@ export type ProcessingConfig = {
   "US": DayRange;
   "CN": DayRange;
 };
+
+export type ShipsOutAndArrivesDisplayValues = {
+  shipsOut: Date | DayRange;
+  arrives: DayRange;
+};

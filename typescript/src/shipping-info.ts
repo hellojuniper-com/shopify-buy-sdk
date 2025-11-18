@@ -1,5 +1,5 @@
-import { DeliveryConfig, ProcessingConfig, VariantShippingMetafields } from "../shared/types";
-import { getBooleanValue, getFieldValue } from "./metafield-utils";
+import { DayRange, DeliveryConfig, ProcessingConfig, ShipsOutAndArrivesDisplayValues, VariantShippingMetafields } from "../shared/types";
+import { convertToDayRange, getBooleanValue } from "./metafield-utils";
 import PreOrderTimeline from "./pre-order-timeline";
 import DefaultDeliveryTimes from "../config/delivery-times.json";
 import DefaultProcessingTimes from "../config/processing-times.json";
@@ -55,6 +55,12 @@ export class ShippingInfo {
         return this.deliveryInfo.maxDays;
     }
 
+    public getShipsOutAndArrivesDisplayValues(): ShipsOutAndArrivesDisplayValues {
+        const shipsOut = this.isInStock() ? this.processingInfo : this.getShipOutDate();
+        const arrives = this.deliveryInfo;
+        return { shipsOut, arrives };
+    }
+
     public static getByDateAndLocation(
         shipsTo: string,
         orderDate: Date,
@@ -62,23 +68,30 @@ export class ShippingInfo {
         deliveryConfig: DeliveryConfig = DefaultDeliveryTimes,
         processingConfig: ProcessingConfig = DefaultProcessingTimes,
     ): ShippingInfo {
-        let deliveryTimes: { minDays: number; maxDays: number };
-        let processingTimes: { minDays: number; maxDays: number };
+        let deliveryTimes: DayRange;
+        let processingTimes: DayRange;
 
         const hasAvailableUSInventory = getBooleanValue(variantShippingMetafields.isFulfillingFromUS);
+        const processingTimeOverride = convertToDayRange(variantShippingMetafields.processingTimeString?.value);
 
         switch(shipsTo) {
             case 'US':
                 deliveryTimes = getDeliveryByLocation('CN', 'US', deliveryConfig);
-                processingTimes = getProcessingByLocation(hasAvailableUSInventory ? 'US' : 'CN', processingConfig);
+                processingTimes = processingTimeOverride
+                    ? processingTimeOverride
+                    : getProcessingByLocation(hasAvailableUSInventory ? 'US' : 'CN', processingConfig);
                 break;
             case 'UK':
                 deliveryTimes = getDeliveryByLocation('CN', 'UK', deliveryConfig);
-                processingTimes = getProcessingByLocation('CN', processingConfig);
+                processingTimes = processingTimeOverride
+                    ? processingTimeOverride
+                    : getProcessingByLocation('CN', processingConfig);
                 break;
             default:
                 deliveryTimes = getDeliveryByLocation('CN', 'WW', deliveryConfig);
-                processingTimes = getProcessingByLocation('CN', processingConfig);
+                processingTimes = processingTimeOverride
+                    ? processingTimeOverride
+                    : getProcessingByLocation('CN', processingConfig);
                 break;
         }
 

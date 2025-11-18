@@ -1,4 +1,4 @@
-import { Metafield, MetafieldReference, MetafieldReferenceMetaobject, MetaobjectField } from "../shared/types";
+import { DayRange, Metafield, MetafieldReference, MetafieldReferenceMetaobject, MetaobjectField } from "../shared/types";
 
 /**
  * Type guard to check if a MetafieldReference is a MetafieldReferenceMetaobject
@@ -46,3 +46,27 @@ export const getBooleanValue = (metafield: Metafield | null): boolean => {
   }
   return metafield.value.toLowerCase() === 'true';
 };
+
+/**
+ * Converts a day range string to an object with minDays and maxDays
+ * @param dayRangeStr - Day range string (e.g. "1-3 business days" or similar)
+ * @returns DayRange object or null if input is invalid
+ */
+export const convertToDayRange = (dayRangeStr: string | null | undefined): DayRange | null => {
+    if (!dayRangeStr) {
+        return null;
+    }
+
+    // Match patterns like "1 - 3 business days", "1–3 business days", "1-2 business days".
+    // Handles regular hyphen, en-dash (–), and em-dash (—) with optional spaces.
+    const rangeMatch = dayRangeStr.match(/(\d+)\s*[-–—]\s*(\d+)/);
+
+    if (!rangeMatch) {
+        return null;
+    }
+
+    return {
+        minDays: parseInt(rangeMatch[1], 10),
+        maxDays: parseInt(rangeMatch[2], 10),
+    };
+}
