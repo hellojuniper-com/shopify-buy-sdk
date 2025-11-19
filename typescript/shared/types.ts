@@ -102,12 +102,23 @@ export type DeliveryConfig = {
     "US": DayRange;
     "UK": DayRange;
     "WW": DayRange;
-  }
+  },
 };
 
 export type ProcessingConfig = {
   "US": DayRange;
   "CN": DayRange;
+};
+
+export type HolidayOrderCutoffConfig = {
+  "US": {
+    "US": string;
+  },
+  "CN": {
+    "US": string;
+    "UK": string;
+    "WW": string;
+  },
 };
 
 export type ShipsOutAndArrivesDisplayValues = {

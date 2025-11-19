@@ -6,7 +6,7 @@ import ShopResource from './shop-resource';
 import CheckoutResource from './checkout-resource';
 import ImageResource from './image-resource';
 import PreOrderTimelineClass from '../dist/src/pre-order-timeline';
-import { ShippingInfo as ShippingInfoClass } from '../dist/src/shipping-info';
+import {ShippingInfo as ShippingInfoClass} from '../dist/src/shipping-info';
 import {version} from '../package.json';
 
 // GraphQL
