@@ -5,7 +5,7 @@ import {
   MetafieldReference,
   VariantShippingMetafields
 } from '../shared/types';
-import { getFieldValue, isMetafieldReferenceMetaobject, validateDate } from './metafield-utils';
+import { getFieldValue, getBooleanValue, isMetafieldReferenceMetaobject, validateDate } from './metafield-utils';
 
 /**
  * Represents a single pre-order batch
@@ -198,7 +198,7 @@ export class PreOrderTimeline {
 
       // 1b. If no US timeline is found but there is currently US inventory, return an empty
       //     timeline, since an estimated shipping date does not exist since the item is in stock.
-      if (isFulfillingFromUS) {
+      if (getBooleanValue(isFulfillingFromUS)) {
         return PreOrderTimeline.fromMetaobjectList(null);
       }
     }
