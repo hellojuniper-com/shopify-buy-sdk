@@ -1,4 +1,5 @@
 /// <reference path="./dist/types/src/pre-order-timeline.d.ts" />
+/// <reference path="./dist/types/src/shipping-info.d.ts" />
 
 import {
     MediaImage,
@@ -7,12 +8,11 @@ import {
     MetafieldReferenceMetaobject,
     MetafieldReference,
     MetaobjectField,
-    Metafield
+    Metafield,
+    VariantShippingMetafields
 } from './dist/types/shared/types';
-import PreOrderTimelineClass, {
-    VariantPreOrderMetafields,
-    PreOrderBatch
-} from './dist/types/src/pre-order-timeline';
+import { PreOrderTimeline as PreOrderTimelineClass, PreOrderBatch } from './dist/types/src/pre-order-timeline';
+import { ShippingInfo as ShippingInfoClass } from './dist/types/src/shipping-info';
 
 declare namespace ShopifyBuy {
     export function buildClient(config: Config): Client;
@@ -23,6 +23,13 @@ declare namespace ShopifyBuy {
      */
     type PreOrderTimelineConstructor = typeof PreOrderTimelineClass;
     export const PreOrderTimeline: PreOrderTimelineConstructor;
+
+    /**
+     * ShippingInfo class for managing shipping information.
+     * Type definitions are auto-generated from typescript/src/shipping-info.ts
+     */
+    type ShippingInfoConstructor = typeof ShippingInfoClass;
+    export const ShippingInfo: ShippingInfoConstructor;
 
     export interface Client {
         product: ShopifyBuy.ProductResource;
@@ -552,7 +559,7 @@ declare namespace ShopifyBuy {
         MetafieldReference,
         MetaobjectField,
         Metafield,
-        VariantPreOrderMetafields,
+        VariantShippingMetafields,
         PreOrderBatch,
     };
 }

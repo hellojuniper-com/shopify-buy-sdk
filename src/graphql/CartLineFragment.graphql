@@ -48,6 +48,21 @@ fragment CartLineFragment on BaseCartLine {
         referenceUnit
         referenceValue
       }
+      metafieldsWithReference: metafields(identifiers: [
+        { namespace: "productListing", key: "inStockToPreOrderWWTransitionDate" },
+        { namespace: "productListing", key: "inStockToPreOrderUSTransitionDate" },
+        { namespace: "productListing", key: "isFulfillingFromUS" },
+      ]) {
+        ...MetafieldWithReferenceFragment
+      }
+      metafieldsWithReferenceList: metafields(
+        identifiers: [
+          { namespace: "productListing", key: "preOrderWWTimeline" },
+          { namespace: "productListing", key: "preOrderUSTimeline" },
+        ]
+      ) {
+          ...MetafieldWithReferenceListFragment
+      }
     }
   }
   quantity

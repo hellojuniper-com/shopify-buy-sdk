@@ -1,0 +1,10 @@
+{
+    "US": {
+        "minDays": 1,
+        "maxDays": 3
+    },
+    "CN": {
+        "minDays": 1,
+        "maxDays": 3
+    }
+}
