@@ -60,8 +60,8 @@ describe('getDeliveryByLocation', () => {
       expect(result).toEqual({ minDays: 7, maxDays: 16 });
     });
 
-    it('should return CN to UK delivery times', () => {
-      const result = getDeliveryByLocation('CN', 'UK');
+    it('should return CN to GB delivery times', () => {
+      const result = getDeliveryByLocation('CN', 'GB');
       expect(result).toEqual({ minDays: 5, maxDays: 8 });
     });
 
@@ -93,7 +93,7 @@ describe('getDeliveryByLocation', () => {
       },
       "CN": {
         "US": { minDays: 10, maxDays: 20 },
-        "UK": { minDays: 7, maxDays: 10 },
+        "GB": { minDays: 7, maxDays: 10 },
         "WW": { minDays: 10, maxDays: 15 }
       }
     };
@@ -129,8 +129,8 @@ describe('getHolidayOrderCuttoffByLocation', () => {
       expect(result.toISOString()).toBe('2025-12-03T05:00:00.000Z');
     });
 
-    it('should return CN to UK holiday cutoff date', () => {
-      const result = getHolidayOrderCuttoffByLocation('CN', 'UK');
+    it('should return CN to GB holiday cutoff date', () => {
+      const result = getHolidayOrderCuttoffByLocation('CN', 'GB');
       expect(result).toBeInstanceOf(Date);
       expect(result.toISOString()).toBe('2025-12-05T05:00:00.000Z');
     });
@@ -167,7 +167,7 @@ describe('getHolidayOrderCuttoffByLocation', () => {
       },
       "CN": {
         "US": "2025-12-01T00:00:00-05:00",
-        "UK": "2025-12-02T00:00:00-05:00",
+        "GB": "2025-12-02T00:00:00-05:00",
         "WW": "2025-11-30T00:00:00-05:00"
       }
     };

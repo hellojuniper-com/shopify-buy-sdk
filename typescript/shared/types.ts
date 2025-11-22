@@ -94,13 +94,15 @@ export interface VariantShippingMetafields {
 
 export type DayRange = { minDays: number; maxDays: number; };
 
+export type DateRange = { earliest: Date; latest: Date; };
+
 export type DeliveryConfig = {
   "US": {
     "US": DayRange;
   },
   "CN": {
     "US": DayRange;
-    "UK": DayRange;
+    "GB": DayRange;
     "WW": DayRange;
   },
 };
@@ -116,7 +118,7 @@ export type HolidayOrderCutoffConfig = {
   },
   "CN": {
     "US": string;
-    "UK": string;
+    "GB": string;
     "WW": string;
   },
 };

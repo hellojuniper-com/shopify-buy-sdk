@@ -1,4 +1,5 @@
 import {
+    DateRange,
     DayRange,
     DeliveryConfig,
     HolidayOrderCutoffConfig,
@@ -6,7 +7,8 @@ import {
     ShipsOutAndArrivesDisplayValues,
     VariantShippingMetafields,
 } from "../shared/types";
-import { convertToDayRange, getBooleanValue } from "./metafield-utils";
+import { getBooleanValue } from "./metafield-utils";
+import { addBusinessDays, convertToDayRange, toDateRangeString } from "./date-utils";
 import PreOrderTimeline from "./pre-order-timeline";
 import DefaultDeliveryTimes from "../config/delivery-times.json";
 import DefaultProcessingTimes from "../config/processing-times.json";
@@ -45,16 +47,37 @@ export class ShippingInfo {
     }
 
     public getShipOutDate(): Date {
-        const inStockShipOutDate = new Date(this.orderDate);
-        inStockShipOutDate.setDate(this.orderDate.getDate() + this.processingInfo.minDays);
+        const inStockShipOutDate = addBusinessDays(this.orderDate, this.processingInfo.maxDays);
         return this.preOrderShipOutDate ? new Date(this.preOrderShipOutDate) : inStockShipOutDate;
     }
 
     public getArrivalDate(): Date {
-        const shipOutDate = this.getShipOutDate();
-        const arrivalDate = new Date(shipOutDate);
-        arrivalDate.setDate(arrivalDate.getDate() + this.deliveryInfo.maxDays);
-        return arrivalDate;
+        const { latest } = this.getArrivalDateRange();
+        return latest;
+    }
+
+    public getArrivalDateRange(): DateRange {
+        let minDays: number, maxDays: number;
+        let startDate: Date;
+
+        if (this.isInStock()) {
+            startDate = new Date(this.orderDate);
+            minDays = this.processingInfo.minDays + this.deliveryInfo.minDays;
+            maxDays = this.processingInfo.maxDays + this.deliveryInfo.maxDays;
+        } else {
+            startDate = this.getShipOutDate();
+            minDays = this.deliveryInfo.minDays;
+            maxDays = this.deliveryInfo.maxDays;
+        }
+        
+        return {
+            earliest: addBusinessDays(startDate, minDays),
+            latest: addBusinessDays(startDate, maxDays),
+        };
+    }
+
+    public getArrivalDateRangeString(monthFormat: "long" | "short" = "long"): string {
+        return toDateRangeString(this.getArrivalDateRange(), monthFormat);
     }
 
     public getMinProcessingDays(): number {
@@ -106,18 +129,30 @@ export class ShippingInfo {
         let deliveryTimes: DayRange;
         let processingTimes: DayRange;
 
+
+        const preOrderTimeline = PreOrderTimeline.getByDateAndLocation(
+            shippingDestination,
+            orderDate,
+            variantShippingMetafields,
+        );
+
         const hasAvailableUSInventory = getBooleanValue(variantShippingMetafields.isFulfillingFromUS);
         const processingTimeOverride = convertToDayRange(variantShippingMetafields.processingTimeString?.value);
+        // For pre-orders, the timeline's fulfillment location is the source of truth.
+        // For in-stock items (empty timeline), use hasAvailableUSInventory to determine origin.
+        const shippingOrigin = preOrderTimeline.isEmpty()
+            ? (hasAvailableUSInventory ? 'US' : 'CN')
+            : preOrderTimeline.getFulfillmentLocation();
 
         switch(shippingDestination) {
             case 'US':
-                deliveryTimes = getDeliveryByLocation('CN', 'US', deliveryConfig);
+                deliveryTimes = getDeliveryByLocation(shippingOrigin, shippingDestination, deliveryConfig);
                 processingTimes = processingTimeOverride
                     ? processingTimeOverride
-                    : getProcessingByLocation(hasAvailableUSInventory ? 'US' : 'CN', processingConfig);
+                    : getProcessingByLocation(shippingOrigin, processingConfig);
                 break;
-            case 'UK':
-                deliveryTimes = getDeliveryByLocation('CN', 'UK', deliveryConfig);
+            case 'GB':
+                deliveryTimes = getDeliveryByLocation('CN', shippingDestination, deliveryConfig);
                 processingTimes = processingTimeOverride
                     ? processingTimeOverride
                     : getProcessingByLocation('CN', processingConfig);
@@ -130,13 +165,7 @@ export class ShippingInfo {
                 break;
         }
 
-        const preOrderTimeline = PreOrderTimeline.getByDateAndLocation(
-            shippingDestination,
-            orderDate,
-            variantShippingMetafields,
-        );
         const preOrderShipOutDate = preOrderTimeline.getEstimatedShippingDate();
-        const shippingOrigin = hasAvailableUSInventory ? 'US' : 'CN';
         const holidayOrderCutoff = getHolidayOrderCuttoffByLocation(
             shippingOrigin,
             shippingDestination,
