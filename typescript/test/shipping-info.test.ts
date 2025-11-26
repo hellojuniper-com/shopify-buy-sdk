@@ -331,6 +331,26 @@ describe('ShippingInfo', () => {
       // Range should span from late January into February
       expect(rangeString).toMatch(/January.*February|February/);
     });
+
+    it('should handle date ranges spanning across years', () => {
+      // Monday, December 22, 2025
+      const orderDate = new Date(2025, 11, 22, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 2, maxDays: 5 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const rangeString = shippingInfo.getArrivalDateRangeString('short');
+
+      // Range should span from late December 2025 into January 2026
+      // Earliest: Dec 22 + 7 business days, Latest: Dec 22 + 15 business days
+      expect(rangeString).toMatch(/Dec.*Jan/);
+    });
   });
 
   describe('getMinProcessingDays', () => {
@@ -760,6 +780,53 @@ describe('ShippingInfo', () => {
         expect(shippingInfo.getMinDeliveryDays()).toBe(5);
         expect(shippingInfo.getMaxDeliveryDays()).toBe(8);
       });
+
+      it('should use CN origin for GB pre-order items', () => {
+        // Create a pre-order timeline for worldwide (which includes GB)
+        const preOrderWWTimeline = {
+          id: 'gid://shopify/Metafield/789',
+          namespace: 'custom',
+          key: 'pre_order_ww_timeline',
+          type: 'list.metaobject_reference',
+          value: null,
+          reference: null,
+          references: [
+            {
+              __typename: 'Metaobject' as const,
+              id: 'gid://shopify/Metaobject/3',
+              fields: [
+                { key: 'orderCutoffDate', value: null },
+                { key: 'estimatedShippingDate', value: '2025-03-20' }
+              ]
+            }
+          ]
+        };
+        const inStockToPreOrderWWTransitionDate = createMetafield('2025-01-01');
+
+        const metafields = createVariantShippingMetafields(
+          preOrderWWTimeline,
+          null,
+          inStockToPreOrderWWTransitionDate,
+          null,
+          null,
+          null
+        );
+
+        const shippingInfo = ShippingInfo.getByDateAndLocation(
+          'GB',
+          new Date('2025-01-15'),
+          metafields,
+          customDeliveryConfig,
+          customProcessingConfig,
+          customHolidayConfig
+        );
+
+        expect(shippingInfo.isInStock()).toBe(false);
+        expect(shippingInfo.getShippingOrigin()).toBe('CN');
+        expect(shippingInfo.getShippingDestination()).toBe('GB');
+        expect(shippingInfo.getMinDeliveryDays()).toBe(5);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(8);
+      });
     });
 
     describe('WW destination', () => {
@@ -786,6 +853,53 @@ describe('ShippingInfo', () => {
         expect(shippingInfo.getShippingDestination()).toBe('CA');
         expect(shippingInfo.getMinProcessingDays()).toBe(1);
         expect(shippingInfo.getMaxProcessingDays()).toBe(3);
+        expect(shippingInfo.getMinDeliveryDays()).toBe(7);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(14);
+      });
+
+      it('should use CN origin for WW pre-order items', () => {
+        // Create a pre-order timeline for worldwide
+        const preOrderWWTimeline = {
+          id: 'gid://shopify/Metafield/101112',
+          namespace: 'custom',
+          key: 'pre_order_ww_timeline',
+          type: 'list.metaobject_reference',
+          value: null,
+          reference: null,
+          references: [
+            {
+              __typename: 'Metaobject' as const,
+              id: 'gid://shopify/Metaobject/4',
+              fields: [
+                { key: 'orderCutoffDate', value: null },
+                { key: 'estimatedShippingDate', value: '2025-04-01' }
+              ]
+            }
+          ]
+        };
+        const inStockToPreOrderWWTransitionDate = createMetafield('2025-01-01');
+
+        const metafields = createVariantShippingMetafields(
+          preOrderWWTimeline,
+          null,
+          inStockToPreOrderWWTransitionDate,
+          null,
+          null,
+          null
+        );
+
+        const shippingInfo = ShippingInfo.getByDateAndLocation(
+          'AU',
+          new Date('2025-01-15'),
+          metafields,
+          customDeliveryConfig,
+          customProcessingConfig,
+          customHolidayConfig
+        );
+
+        expect(shippingInfo.isInStock()).toBe(false);
+        expect(shippingInfo.getShippingOrigin()).toBe('CN');
+        expect(shippingInfo.getShippingDestination()).toBe('AU');
         expect(shippingInfo.getMinDeliveryDays()).toBe(7);
         expect(shippingInfo.getMaxDeliveryDays()).toBe(14);
       });
