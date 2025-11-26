@@ -546,7 +546,10 @@ describe('ShippingInfo', () => {
 
   describe('getByDateAndLocation', () => {
     const customDeliveryConfig: DeliveryConfig = {
-      "US": { "US": { minDays: 3, maxDays: 5 } },
+      "US": {
+        "US": { minDays: 3, maxDays: 5 },
+        "WW": { minDays: 5, maxDays: 10 }
+      },
       "CN": {
         "US": { minDays: 7, maxDays: 16 },
         "GB": { minDays: 5, maxDays: 8 },
@@ -560,7 +563,10 @@ describe('ShippingInfo', () => {
     };
 
     const customHolidayConfig: HolidayOrderCutoffConfig = {
-      "US": { "US": "2025-12-12T00:00:00-05:00" },
+      "US": {
+        "US": "2025-12-12T00:00:00-05:00",
+        "WW": "2025-12-10T00:00:00-05:00"
+      },
       "CN": {
         "US": "2025-12-03T00:00:00-05:00",
         "GB": "2025-12-05T00:00:00-05:00",

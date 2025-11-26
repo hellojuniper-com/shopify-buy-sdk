@@ -604,7 +604,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
 
     it('should preserve orderDate when input is null', () => {
       const customDate = new Date('2025-01-15');
-      const timeline = PreOrderTimeline.fromMetaobjectList(null, customDate);
+      const timeline = PreOrderTimeline.fromMetaobjectList(null, 'CN', customDate);
 
       expect(timeline.getOrderDate()).toEqual(customDate);
     });
@@ -639,7 +639,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
       const customDate = new Date('2025-01-15');
       const metaobjectList = createMetaobjectList([]);
 
-      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, customDate);
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, 'CN', customDate);
 
       expect(timeline.getOrderDate()).toEqual(customDate);
     });
@@ -676,7 +676,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
         { cutoff: null, shipping: '2025-02-01' }
       ]);
 
-      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, customDate);
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, 'CN', customDate);
 
       expect(timeline.getOrderDate()).toEqual(customDate);
     });
@@ -723,7 +723,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
         { cutoff: null, shipping: '2025-04-01' }
       ]);
 
-      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, customDate);
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, 'CN', customDate);
 
       expect(timeline.getOrderDate()).toEqual(customDate);
     });
@@ -1671,6 +1671,7 @@ describe('PreOrderTimeline instance methods', () => {
           { cutoff: '2025-02-01', shipping: '2025-03-01' },
           { cutoff: '2025-03-01', shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-01-15')
       );
 
@@ -1685,6 +1686,7 @@ describe('PreOrderTimeline instance methods', () => {
           { cutoff: '2025-02-01', shipping: '2025-03-01' },
           { cutoff: '2025-03-01', shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-02-15')
       );
 
@@ -1699,6 +1701,7 @@ describe('PreOrderTimeline instance methods', () => {
           { cutoff: '2025-02-01', shipping: '2025-03-01' },
           { cutoff: '2025-03-01', shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-02-01')
       );
 
@@ -1713,6 +1716,7 @@ describe('PreOrderTimeline instance methods', () => {
           { cutoff: '2025-02-01', shipping: '2025-03-01' },
           { cutoff: null, shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-03-15')
       );
 
@@ -1726,6 +1730,7 @@ describe('PreOrderTimeline instance methods', () => {
         createMetaobjectList([
           { cutoff: null, shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-01-15')
       );
 
@@ -1749,6 +1754,7 @@ describe('PreOrderTimeline instance methods', () => {
           { cutoff: '2025-02-01', shipping: '2025-03-01' },
           { cutoff: null, shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-01-15')
       );
 
@@ -1769,6 +1775,7 @@ describe('PreOrderTimeline instance methods', () => {
           { cutoff: '2025-02-01', shipping: '2025-03-01' },
           { cutoff: '2025-03-01', shipping: '2025-04-01' }
         ]),
+        'CN',
         new Date('2025-02-15')
       );
 
@@ -1781,6 +1788,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should format early month dates (1-10)', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-01-05' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1790,6 +1798,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should format mid month dates (11-20)', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-02-15' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1799,6 +1808,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should format late month dates (21-31)', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-03-25' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1808,6 +1818,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should handle day 1 as early', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-04-01T12:00:00Z' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1817,6 +1828,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should handle day 10 as early', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-05-10T12:00:00Z' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1826,6 +1838,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should handle day 11 as mid', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-06-11T12:00:00Z' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1835,6 +1848,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should handle day 20 as mid', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-07-20T12:00:00Z' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1844,6 +1858,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should handle day 21 as late', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-08-21T12:00:00Z' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1853,6 +1868,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should handle day 31 as late', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-12-31' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1868,6 +1884,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should return null when no applicable batch', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -1893,6 +1910,7 @@ describe('PreOrderTimeline instance methods', () => {
       months.forEach(({ date, expected }) => {
         const timeline = PreOrderTimeline.fromMetaobjectList(
           createMetaobjectList([{ cutoff: null, shipping: date }]),
+          'CN',
           new Date('2025-01-01')
         );
         expect(timeline.getFormattedShippingDate()).toBe(expected);
@@ -1904,6 +1922,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should format with long month names by default', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -1914,6 +1933,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should format with short month names when specified', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -1939,6 +1959,7 @@ describe('PreOrderTimeline instance methods', () => {
           months.forEach(({ date, expected }) => {
             const timeline = PreOrderTimeline.fromMetaobjectList(
               createMetaobjectList([{ cutoff: null, shipping: date }]),
+              'CN',
               new Date('2025-01-01')
             );
             expect(timeline.getFormattedShippingDate({ month: 'short' })).toBe(expected);
@@ -1950,6 +1971,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should not capitalize period by default', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-05' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -1960,6 +1982,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should capitalize period when specified', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-05' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -1976,6 +1999,7 @@ describe('PreOrderTimeline instance methods', () => {
           testCases.forEach(({ date, expectedCapitalized, expectedLowercase }) => {
             const timeline = PreOrderTimeline.fromMetaobjectList(
               createMetaobjectList([{ cutoff: null, shipping: date }]),
+              'CN',
               new Date('2025-01-01')
             );
             expect(timeline.getFormattedShippingDate({ capitalize: true })).toBe(expectedCapitalized);
@@ -1988,6 +2012,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should format with short month and capitalize', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -1997,6 +2022,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should format with short month and no capitalize', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -2006,6 +2032,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should format with long month and capitalize', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -2046,6 +2073,7 @@ describe('PreOrderTimeline instance methods', () => {
           testCases.forEach(({ date, combinations }) => {
             const timeline = PreOrderTimeline.fromMetaobjectList(
               createMetaobjectList([{ cutoff: null, shipping: date }]),
+              'CN',
               new Date('2025-01-01')
             );
 
@@ -2060,6 +2088,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should use default month when only capitalize is provided', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -2070,6 +2099,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should use default capitalize when only month is provided', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -2091,6 +2121,7 @@ describe('PreOrderTimeline instance methods', () => {
         it('should return null when no applicable batch regardless of options', () => {
           const timeline = PreOrderTimeline.fromMetaobjectList(
             createMetaobjectList([]),
+            'CN',
             new Date('2025-01-01')
           );
 
@@ -2169,6 +2200,7 @@ describe('PreOrderTimeline instance methods', () => {
       const orderDate = new Date('2025-01-15T10:30:00Z');
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-02-01' }]),
+        'CN',
         orderDate
       );
 
@@ -2188,10 +2220,47 @@ describe('PreOrderTimeline instance methods', () => {
     });
   });
 
+  describe('getFulfillmentLocation', () => {
+    it('should return US when fulfillmentLocation is US', () => {
+      const timeline = PreOrderTimeline.fromMetaobjectList(
+        createMetaobjectList([{ cutoff: null, shipping: '2025-02-01' }]),
+        'US'
+      );
+
+      expect(timeline.getFulfillmentLocation()).toBe('US');
+    });
+
+    it('should return CN when fulfillmentLocation is CN', () => {
+      const timeline = PreOrderTimeline.fromMetaobjectList(
+        createMetaobjectList([{ cutoff: null, shipping: '2025-02-01' }]),
+        'CN'
+      );
+
+      expect(timeline.getFulfillmentLocation()).toBe('CN');
+    });
+
+    it('should return CN by default when no fulfillmentLocation provided', () => {
+      const timeline = PreOrderTimeline.fromMetaobjectList(
+        createMetaobjectList([{ cutoff: null, shipping: '2025-02-01' }])
+      );
+
+      expect(timeline.getFulfillmentLocation()).toBe('CN');
+    });
+
+    it('should preserve fulfillmentLocation for empty timeline', () => {
+      const timelineUS = PreOrderTimeline.fromMetaobjectList(null, 'US');
+      const timelineCN = PreOrderTimeline.fromMetaobjectList(null, 'CN');
+
+      expect(timelineUS.getFulfillmentLocation()).toBe('US');
+      expect(timelineCN.getFulfillmentLocation()).toBe('CN');
+    });
+  });
+
   describe('hasEstimatedShippingDatePassed', () => {
     it('should return true when current date is after shipping date', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-01-15' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -2202,6 +2271,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should return false when current date is before shipping date', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-02-15' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -2212,6 +2282,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should return true when current date equals shipping date', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-02-15' }]),
+        'CN',
         new Date('2025-01-01')
       );
 
@@ -2230,6 +2301,7 @@ describe('PreOrderTimeline instance methods', () => {
       const pastDate = new Date('2020-01-01');
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: pastDate.toISOString() }]),
+        'CN',
         new Date('2020-01-01')
       );
 
@@ -2240,6 +2312,7 @@ describe('PreOrderTimeline instance methods', () => {
     it('should work with time components', () => {
       const timeline = PreOrderTimeline.fromMetaobjectList(
         createMetaobjectList([{ cutoff: null, shipping: '2025-02-15T10:00:00Z' }]),
+        'CN',
         new Date('2025-01-01')
       );
 

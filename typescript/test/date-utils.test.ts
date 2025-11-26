@@ -249,7 +249,7 @@ describe('toDateRangeString', () => {
         earliest: createLocalDate(2025, 1, 1),
         latest: createLocalDate(2025, 1, 31),
       };
-      expect(toDateRangeString(dateRange)).toBe('January 1 –31');
+      expect(toDateRangeString(dateRange)).toBe('January 1 – 31');
     });
 
     it('should handle December dates', () => {
@@ -299,7 +299,7 @@ describe('toDateRangeString', () => {
         earliest: createLocalDate(2024, 12, 15),
         latest: createLocalDate(2025, 12, 15),
       };
-      expect(toDateRangeString(dateRange)).toBe('Dec 15 –Dec 15');
+      expect(toDateRangeString(dateRange)).toBe('Dec 15 – Dec 15');
     });
   });
 
@@ -325,7 +325,7 @@ describe('toDateRangeString', () => {
         earliest: createLocalDate(2024, 2, 29),
         latest: createLocalDate(2024, 3, 1),
       };
-      expect(toDateRangeString(dateRange)).toBe('Feb 29 –Mar 1');
+      expect(toDateRangeString(dateRange)).toBe('Feb 29 – Mar 1');
     });
   });
 });

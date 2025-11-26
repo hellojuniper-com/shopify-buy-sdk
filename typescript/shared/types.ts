@@ -99,6 +99,7 @@ export type DateRange = { earliest: Date; latest: Date; };
 export type DeliveryConfig = {
   "US": {
     "US": DayRange;
+    "WW": DayRange;
   },
   "CN": {
     "US": DayRange;
@@ -115,6 +116,7 @@ export type ProcessingConfig = {
 export type HolidayOrderCutoffConfig = {
   "US": {
     "US": string;
+    "WW": string;
   },
   "CN": {
     "US": string;

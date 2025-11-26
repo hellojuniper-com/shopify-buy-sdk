@@ -23,8 +23,9 @@ export const getDeliveryByLocation = (
         if (destination in destConfig) {
             return destConfig[destination as keyof typeof destConfig];
         }
+        return destConfig['WW'];
     }
-    return deliveryConfig['CN']['US'];
+    return deliveryConfig['CN']['WW'];
 };
 
 export const getHolidayOrderCuttoffByLocation = (
@@ -37,6 +38,7 @@ export const getHolidayOrderCuttoffByLocation = (
         if (destination in destConfig) {
             return new Date(destConfig[destination as keyof typeof destConfig]);
         }
+        return new Date(destConfig['WW']);
     }
     return new Date(holidayOrderCutoffConfig['CN']['WW']);
 }
