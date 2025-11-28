@@ -3,14 +3,18 @@
         "US": {
             "minDays": 3,
             "maxDays": 5
+        },
+        "WW": {
+            "minDays": 7,
+            "maxDays": 14
         }
     },
     "CN": {
         "US": {
             "minDays": 7,
-            "maxDays": 16
+            "maxDays": 14
         },
-        "UK": {
+        "GB": {
             "minDays": 5,
             "maxDays": 8
         },

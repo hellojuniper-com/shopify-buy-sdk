@@ -2,16 +2,22 @@
 /// <reference path="./dist/types/src/shipping-info.d.ts" />
 
 import {
+    DateRange,
+    DayRange,
+    DeliveryConfig,
+    HolidayOrderCutoffConfig,
     MediaImage,
-    Video,
+    Metafield,
     MetafieldReferenceGenericFile,
     MetafieldReferenceMetaobject,
     MetafieldReference,
     MetaobjectField,
-    Metafield,
-    VariantShippingMetafields
+    ProcessingConfig,
+    ShipsOutAndArrivesDisplayValues,
+    VariantShippingMetafields,
+    Video,
 } from './dist/types/shared/types';
-import { PreOrderTimeline as PreOrderTimelineClass, PreOrderBatch } from './dist/types/src/pre-order-timeline';
+import { PreOrderBatch, PreOrderTimeline as PreOrderTimelineClass } from './dist/types/src/pre-order-timeline';
 import { ShippingInfo as ShippingInfoClass } from './dist/types/src/shipping-info';
 
 declare namespace ShopifyBuy {
@@ -561,6 +567,12 @@ declare namespace ShopifyBuy {
         Metafield,
         VariantShippingMetafields,
         PreOrderBatch,
+        DayRange,
+        DateRange,
+        DeliveryConfig,
+        ProcessingConfig,
+        HolidayOrderCutoffConfig,
+        ShipsOutAndArrivesDisplayValues,
     };
 }
 

@@ -93,8 +93,9 @@ describe('ShippingInfo', () => {
   });
 
   describe('getShipOutDate', () => {
-    it('should return orderDate + minProcessingDays for in-stock items', () => {
-      const orderDate = new Date('2025-01-15');
+    it('should return orderDate + maxProcessingDays (business days) for in-stock items', () => {
+      // Monday, January 6, 2025 at noon to avoid timezone issues
+      const orderDate = new Date(2025, 0, 6, 12, 0, 0);
       const shippingInfo = new ShippingInfo(
         orderDate,
         null,
@@ -106,7 +107,10 @@ describe('ShippingInfo', () => {
       );
 
       const shipOutDate = shippingInfo.getShipOutDate();
-      expect(shipOutDate.toISOString()).toBe('2025-01-18T00:00:00.000Z');
+      // 5 business days from Monday Jan 6: Tue(1), Wed(2), Thu(3), Fri(4), Mon(5) = Jan 13
+      expect(shipOutDate.getFullYear()).toBe(2025);
+      expect(shipOutDate.getMonth()).toBe(0); // January
+      expect(shipOutDate.getDate()).toBe(13);
     });
 
     it('should return preOrderShipOutDate for pre-order items', () => {
@@ -146,38 +150,206 @@ describe('ShippingInfo', () => {
   });
 
   describe('getArrivalDate', () => {
-    it('should return shipOutDate + maxDeliveryDays for in-stock items', () => {
-      const orderDate = new Date('2025-01-15');
+    it('should return shipOutDate + maxDeliveryDays (business days) for in-stock items', () => {
+      // Monday, January 6, 2025 at noon to avoid timezone issues
+      const orderDate = new Date(2025, 0, 6, 12, 0, 0);
       const shippingInfo = new ShippingInfo(
         orderDate,
         null,
         { minDays: 1, maxDays: 3 },
-        { minDays: 7, maxDays: 16 },
+        { minDays: 7, maxDays: 10 },
         'CN',
         'US',
         new Date('2025-12-12')
       );
 
       const arrivalDate = shippingInfo.getArrivalDate();
-      // Order date (2025-01-15) + minProcessingDays (1) + maxDeliveryDays (16) = 2025-02-01
-      expect(arrivalDate.toISOString()).toBe('2025-02-01T00:00:00.000Z');
+      // Ship out: 3 business days from Mon Jan 6 = Thu Jan 9
+      // Arrival: 10 business days from Jan 9 = Thu Jan 23
+      expect(arrivalDate.getFullYear()).toBe(2025);
+      expect(arrivalDate.getMonth()).toBe(0); // January
+      expect(arrivalDate.getDate()).toBe(23);
     });
 
-    it('should return preOrderShipOutDate + maxDeliveryDays for pre-order items', () => {
-      const preOrderShipOutDate = new Date('2025-02-01');
+    it('should return preOrderShipOutDate + maxDeliveryDays (business days) for pre-order items', () => {
+      // Monday, February 3, 2025 at noon to avoid timezone issues
+      const preOrderShipOutDate = new Date(2025, 1, 3, 12, 0, 0);
       const shippingInfo = new ShippingInfo(
-        new Date('2025-01-15'),
+        new Date(2025, 0, 15, 12, 0, 0),
         preOrderShipOutDate,
         { minDays: 1, maxDays: 3 },
-        { minDays: 7, maxDays: 16 },
+        { minDays: 7, maxDays: 10 },
         'CN',
         'US',
         new Date('2025-12-12')
       );
 
       const arrivalDate = shippingInfo.getArrivalDate();
-      // Pre-order ship out (2025-02-01) + maxDeliveryDays (16) = 2025-02-17
-      expect(arrivalDate.toISOString()).toBe('2025-02-17T00:00:00.000Z');
+      // Pre-order ship out Monday Feb 3 + 10 business days = Mon Feb 17
+      expect(arrivalDate.getFullYear()).toBe(2025);
+      expect(arrivalDate.getMonth()).toBe(1); // February
+      expect(arrivalDate.getDate()).toBe(17);
+    });
+  });
+
+  describe('getArrivalDateRange', () => {
+    it('should return earliest and latest arrival dates for in-stock items', () => {
+      // Monday, January 6, 2025 at noon to avoid timezone issues
+      const orderDate = new Date(2025, 0, 6, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 1, maxDays: 3 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const dateRange = shippingInfo.getArrivalDateRange();
+
+      // For in-stock items: processing + delivery days from order date
+      // Earliest: 1 + 5 = 6 business days from Mon Jan 6 = Tue Jan 14
+      expect(dateRange.earliest.getFullYear()).toBe(2025);
+      expect(dateRange.earliest.getMonth()).toBe(0); // January
+      expect(dateRange.earliest.getDate()).toBe(14);
+
+      // Latest: 3 + 10 = 13 business days from Mon Jan 6 = Thu Jan 23
+      expect(dateRange.latest.getFullYear()).toBe(2025);
+      expect(dateRange.latest.getMonth()).toBe(0); // January
+      expect(dateRange.latest.getDate()).toBe(23);
+    });
+
+    it('should return earliest and latest arrival dates for pre-order items', () => {
+      // Monday, February 3, 2025 at noon to avoid timezone issues
+      const preOrderShipOutDate = new Date(2025, 1, 3, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        new Date(2025, 0, 15, 12, 0, 0),
+        preOrderShipOutDate,
+        { minDays: 1, maxDays: 3 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const dateRange = shippingInfo.getArrivalDateRange();
+
+      // For pre-order items: delivery days only from ship-out date
+      // Earliest: 5 business days from Mon Feb 3 = Mon Feb 10
+      expect(dateRange.earliest.getFullYear()).toBe(2025);
+      expect(dateRange.earliest.getMonth()).toBe(1); // February
+      expect(dateRange.earliest.getDate()).toBe(10);
+
+      // Latest: 10 business days from Mon Feb 3 = Mon Feb 17
+      expect(dateRange.latest.getFullYear()).toBe(2025);
+      expect(dateRange.latest.getMonth()).toBe(1); // February
+      expect(dateRange.latest.getDate()).toBe(17);
+    });
+
+    it('should handle weekend skipping correctly', () => {
+      // Friday, January 10, 2025 at noon
+      const orderDate = new Date(2025, 0, 10, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 1, maxDays: 2 },
+        { minDays: 1, maxDays: 2 },
+        'US',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const dateRange = shippingInfo.getArrivalDateRange();
+
+      // Earliest: 2 business days from Fri Jan 10 = Tue Jan 14 (skips weekend)
+      expect(dateRange.earliest.getFullYear()).toBe(2025);
+      expect(dateRange.earliest.getMonth()).toBe(0); // January
+      expect(dateRange.earliest.getDate()).toBe(14);
+
+      // Latest: 4 business days from Fri Jan 10 = Thu Jan 16
+      expect(dateRange.latest.getFullYear()).toBe(2025);
+      expect(dateRange.latest.getMonth()).toBe(0); // January
+      expect(dateRange.latest.getDate()).toBe(16);
+    });
+  });
+
+  describe('getArrivalDateRangeString', () => {
+    it('should return formatted date range string with long month format (default)', () => {
+      // Monday, January 6, 2025
+      const orderDate = new Date(2025, 0, 6, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 1, maxDays: 3 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const rangeString = shippingInfo.getArrivalDateRangeString();
+
+      // Earliest: Jan 14, Latest: Jan 23 (uses en-dash)
+      expect(rangeString).toBe('January 14 – 23');
+    });
+
+    it('should return formatted date range string with short month format', () => {
+      // Monday, January 6, 2025
+      const orderDate = new Date(2025, 0, 6, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 1, maxDays: 3 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const rangeString = shippingInfo.getArrivalDateRangeString('short');
+
+      // Earliest: Jan 14, Latest: Jan 23 (uses en-dash)
+      expect(rangeString).toBe('Jan 14 – 23');
+    });
+
+    it('should include both months when range spans different months', () => {
+      // Monday, January 27, 2025
+      const orderDate = new Date(2025, 0, 27, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 1, maxDays: 5 },
+        { minDays: 5, maxDays: 15 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const rangeString = shippingInfo.getArrivalDateRangeString();
+
+      // Range should span from late January into February
+      expect(rangeString).toMatch(/January.*February|February/);
+    });
+
+    it('should handle date ranges spanning across years', () => {
+      // Monday, December 22, 2025
+      const orderDate = new Date(2025, 11, 22, 12, 0, 0);
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        null,
+        { minDays: 2, maxDays: 5 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const rangeString = shippingInfo.getArrivalDateRangeString('short');
+
+      // Range should span from late December 2025 into January 2026
+      // Earliest: Dec 22 + 7 business days, Latest: Dec 22 + 15 business days
+      expect(rangeString).toMatch(/Dec.*Jan/);
     });
   });
 
@@ -394,10 +566,13 @@ describe('ShippingInfo', () => {
 
   describe('getByDateAndLocation', () => {
     const customDeliveryConfig: DeliveryConfig = {
-      "US": { "US": { minDays: 3, maxDays: 5 } },
+      "US": {
+        "US": { minDays: 3, maxDays: 5 },
+        "WW": { minDays: 5, maxDays: 10 }
+      },
       "CN": {
         "US": { minDays: 7, maxDays: 16 },
-        "UK": { minDays: 5, maxDays: 8 },
+        "GB": { minDays: 5, maxDays: 8 },
         "WW": { minDays: 7, maxDays: 14 }
       }
     };
@@ -408,10 +583,13 @@ describe('ShippingInfo', () => {
     };
 
     const customHolidayConfig: HolidayOrderCutoffConfig = {
-      "US": { "US": "2025-12-12T00:00:00-05:00" },
+      "US": {
+        "US": "2025-12-12T00:00:00-05:00",
+        "WW": "2025-12-10T00:00:00-05:00"
+      },
       "CN": {
         "US": "2025-12-03T00:00:00-05:00",
-        "UK": "2025-12-05T00:00:00-05:00",
+        "GB": "2025-12-05T00:00:00-05:00",
         "WW": "2025-12-03T00:00:00-05:00"
       }
     };
@@ -446,7 +624,7 @@ describe('ShippingInfo', () => {
     });
 
     describe('US destination with US inventory', () => {
-      it('should use US processing and CN->US delivery times', () => {
+      it('should use US processing and US->US delivery times', () => {
         const metafields = createVariantShippingMetafields(
           null,
           null,
@@ -469,13 +647,114 @@ describe('ShippingInfo', () => {
         expect(shippingInfo.getShippingDestination()).toBe('US');
         expect(shippingInfo.getMinProcessingDays()).toBe(1);
         expect(shippingInfo.getMaxProcessingDays()).toBe(3);
-        expect(shippingInfo.getMinDeliveryDays()).toBe(7);
-        expect(shippingInfo.getMaxDeliveryDays()).toBe(16);
+        // Now uses US->US delivery times instead of CN->US
+        expect(shippingInfo.getMinDeliveryDays()).toBe(3);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(5);
+      });
+
+      it('should use US origin when pre-order fulfills from US (even without isFulfillingFromUS)', () => {
+        // Create a pre-order timeline that fulfills from US
+        const preOrderUSTimeline = {
+          id: 'gid://shopify/Metafield/123',
+          namespace: 'custom',
+          key: 'pre_order_us_timeline',
+          type: 'list.metaobject_reference',
+          value: null,
+          reference: null,
+          references: [
+            {
+              __typename: 'Metaobject' as const,
+              id: 'gid://shopify/Metaobject/1',
+              fields: [
+                { key: 'orderCutoffDate', value: null },
+                { key: 'estimatedShippingDate', value: '2025-03-01' }
+              ]
+            }
+          ]
+        };
+        // Transition date in the past means the order is a pre-order
+        const inStockToPreOrderUSTransitionDate = createMetafield('2025-01-01');
+
+        const metafields = createVariantShippingMetafields(
+          null,  // preOrderWWTimeline
+          preOrderUSTimeline,  // preOrderUSTimeline
+          null,  // inStockToPreOrderWWTransitionDate
+          inStockToPreOrderUSTransitionDate,  // inStockToPreOrderUSTransitionDate
+          createMetafield('false'),  // isFulfillingFromUS is false
+          null
+        );
+
+        const shippingInfo = ShippingInfo.getByDateAndLocation(
+          'US',
+          new Date('2025-01-15'),
+          metafields,
+          customDeliveryConfig,
+          customProcessingConfig,
+          customHolidayConfig
+        );
+
+        // Pre-order timeline fulfills from US, so origin should be US
+        expect(shippingInfo.getShippingOrigin()).toBe('US');
+        expect(shippingInfo.isInStock()).toBe(false);
+        // Should use US->US delivery times
+        expect(shippingInfo.getMinDeliveryDays()).toBe(3);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(5);
+      });
+
+      it('should treat US customers with isFulfillingFromUS=true as in-stock even if WW pre-order exists', () => {
+        // This test documents the current behavior: when shipping to US and isFulfillingFromUS=true,
+        // the PreOrderTimeline returns an empty timeline (in-stock), even if a WW pre-order timeline exists.
+        // This is because US customers with available US inventory are served from US stock.
+        const preOrderWWTimeline = {
+          id: 'gid://shopify/Metafield/456',
+          namespace: 'custom',
+          key: 'pre_order_ww_timeline',
+          type: 'list.metaobject_reference',
+          value: null,
+          reference: null,
+          references: [
+            {
+              __typename: 'Metaobject' as const,
+              id: 'gid://shopify/Metaobject/2',
+              fields: [
+                { key: 'orderCutoffDate', value: null },
+                { key: 'estimatedShippingDate', value: '2025-03-15' }
+              ]
+            }
+          ]
+        };
+        const inStockToPreOrderWWTransitionDate = createMetafield('2025-01-01');
+
+        const metafields = createVariantShippingMetafields(
+          preOrderWWTimeline,  // preOrderWWTimeline exists
+          null,  // preOrderUSTimeline
+          inStockToPreOrderWWTransitionDate,  // inStockToPreOrderWWTransitionDate
+          null,  // inStockToPreOrderUSTransitionDate
+          createMetafield('true'),  // isFulfillingFromUS is TRUE - US inventory available
+          null
+        );
+
+        const shippingInfo = ShippingInfo.getByDateAndLocation(
+          'US',
+          new Date('2025-01-15'),
+          metafields,
+          customDeliveryConfig,
+          customProcessingConfig,
+          customHolidayConfig
+        );
+
+        // Item is treated as in-stock (US inventory available), not as a pre-order
+        expect(shippingInfo.isInStock()).toBe(true);
+        // Origin is US because hasAvailableUSInventory is true and timeline is empty
+        expect(shippingInfo.getShippingOrigin()).toBe('US');
+        // Should use US->US delivery times
+        expect(shippingInfo.getMinDeliveryDays()).toBe(3);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(5);
       });
     });
 
-    describe('UK destination', () => {
-      it('should use CN processing and CN->UK delivery times', () => {
+    describe('GB destination', () => {
+      it('should use CN processing and CN->GB delivery times', () => {
         const metafields = createVariantShippingMetafields(
           null,
           null,
@@ -486,7 +765,7 @@ describe('ShippingInfo', () => {
         );
 
         const shippingInfo = ShippingInfo.getByDateAndLocation(
-          'UK',
+          'GB',
           new Date('2025-01-15'),
           metafields,
           customDeliveryConfig,
@@ -495,9 +774,56 @@ describe('ShippingInfo', () => {
         );
 
         expect(shippingInfo.getShippingOrigin()).toBe('CN');
-        expect(shippingInfo.getShippingDestination()).toBe('UK');
+        expect(shippingInfo.getShippingDestination()).toBe('GB');
         expect(shippingInfo.getMinProcessingDays()).toBe(1);
         expect(shippingInfo.getMaxProcessingDays()).toBe(3);
+        expect(shippingInfo.getMinDeliveryDays()).toBe(5);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(8);
+      });
+
+      it('should use CN origin for GB pre-order items', () => {
+        // Create a pre-order timeline for worldwide (which includes GB)
+        const preOrderWWTimeline = {
+          id: 'gid://shopify/Metafield/789',
+          namespace: 'custom',
+          key: 'pre_order_ww_timeline',
+          type: 'list.metaobject_reference',
+          value: null,
+          reference: null,
+          references: [
+            {
+              __typename: 'Metaobject' as const,
+              id: 'gid://shopify/Metaobject/3',
+              fields: [
+                { key: 'orderCutoffDate', value: null },
+                { key: 'estimatedShippingDate', value: '2025-03-20' }
+              ]
+            }
+          ]
+        };
+        const inStockToPreOrderWWTransitionDate = createMetafield('2025-01-01');
+
+        const metafields = createVariantShippingMetafields(
+          preOrderWWTimeline,
+          null,
+          inStockToPreOrderWWTransitionDate,
+          null,
+          null,
+          null
+        );
+
+        const shippingInfo = ShippingInfo.getByDateAndLocation(
+          'GB',
+          new Date('2025-01-15'),
+          metafields,
+          customDeliveryConfig,
+          customProcessingConfig,
+          customHolidayConfig
+        );
+
+        expect(shippingInfo.isInStock()).toBe(false);
+        expect(shippingInfo.getShippingOrigin()).toBe('CN');
+        expect(shippingInfo.getShippingDestination()).toBe('GB');
         expect(shippingInfo.getMinDeliveryDays()).toBe(5);
         expect(shippingInfo.getMaxDeliveryDays()).toBe(8);
       });
@@ -530,6 +856,53 @@ describe('ShippingInfo', () => {
         expect(shippingInfo.getMinDeliveryDays()).toBe(7);
         expect(shippingInfo.getMaxDeliveryDays()).toBe(14);
       });
+
+      it('should use CN origin for WW pre-order items', () => {
+        // Create a pre-order timeline for worldwide
+        const preOrderWWTimeline = {
+          id: 'gid://shopify/Metafield/101112',
+          namespace: 'custom',
+          key: 'pre_order_ww_timeline',
+          type: 'list.metaobject_reference',
+          value: null,
+          reference: null,
+          references: [
+            {
+              __typename: 'Metaobject' as const,
+              id: 'gid://shopify/Metaobject/4',
+              fields: [
+                { key: 'orderCutoffDate', value: null },
+                { key: 'estimatedShippingDate', value: '2025-04-01' }
+              ]
+            }
+          ]
+        };
+        const inStockToPreOrderWWTransitionDate = createMetafield('2025-01-01');
+
+        const metafields = createVariantShippingMetafields(
+          preOrderWWTimeline,
+          null,
+          inStockToPreOrderWWTransitionDate,
+          null,
+          null,
+          null
+        );
+
+        const shippingInfo = ShippingInfo.getByDateAndLocation(
+          'AU',
+          new Date('2025-01-15'),
+          metafields,
+          customDeliveryConfig,
+          customProcessingConfig,
+          customHolidayConfig
+        );
+
+        expect(shippingInfo.isInStock()).toBe(false);
+        expect(shippingInfo.getShippingOrigin()).toBe('CN');
+        expect(shippingInfo.getShippingDestination()).toBe('AU');
+        expect(shippingInfo.getMinDeliveryDays()).toBe(7);
+        expect(shippingInfo.getMaxDeliveryDays()).toBe(14);
+      });
     });
 
     describe('with processing time override', () => {
@@ -556,7 +929,7 @@ describe('ShippingInfo', () => {
         expect(shippingInfo.getMaxProcessingDays()).toBe(5);
       });
 
-      it('should use override processing times for UK destination', () => {
+      it('should use override processing times for GB destination', () => {
         const metafields = createVariantShippingMetafields(
           null,
           null,
@@ -567,7 +940,7 @@ describe('ShippingInfo', () => {
         );
 
         const shippingInfo = ShippingInfo.getByDateAndLocation(
-          'UK',
+          'GB',
           new Date('2025-01-15'),
           metafields,
           customDeliveryConfig,
@@ -672,11 +1045,11 @@ describe('ShippingInfo', () => {
         expect(shippingInfo.getHolidayOrderCutoff().toISOString()).toBe('2025-12-03T05:00:00.000Z');
       });
 
-      it('should use CN->UK holiday cutoff', () => {
+      it('should use CN->GB holiday cutoff', () => {
         const metafields = createVariantShippingMetafields();
 
         const shippingInfo = ShippingInfo.getByDateAndLocation(
-          'UK',
+          'GB',
           new Date('2025-01-15'),
           metafields,
           customDeliveryConfig,

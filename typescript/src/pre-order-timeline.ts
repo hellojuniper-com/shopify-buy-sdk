@@ -103,15 +103,17 @@ const sortBatchesByOrderCutoffDate = (batches: PreOrderBatch[]): PreOrderBatch[]
 export class PreOrderTimeline {
   private readonly batches: PreOrderBatch[];
   private readonly orderDate: Date;
+  private readonly fulfillmentLocation: 'US' | 'CN';
 
   /**
    * Private constructor - use static factory method fromMetaobjectList instead
    * @param batches - Validated and sorted array of pre-order batches
    * @param orderDate - The order date for context (defaults to now)
    */
-  private constructor(batches: PreOrderBatch[], orderDate: Date = new Date()) {
+  private constructor(batches: PreOrderBatch[], fulfillmentLocation: 'US' | 'CN', orderDate: Date = new Date()) {
     this.batches = batches;
     this.orderDate = orderDate;
+    this.fulfillmentLocation = fulfillmentLocation;
   }
 
   /**
@@ -120,12 +122,14 @@ export class PreOrderTimeline {
    * @param preOrderTimeline - The pre-order timeline metafield
    * @param inStockToPreOrderTransitionDate - The transition date metafield
    * @param orderDate - The date the order was placed
+   * @param fulfillmentLocation - The fulfillment location ('US' or 'CN')
    * @returns PreOrderTimeline instance if valid, null otherwise
    */
   private static getByDateAndLocationInternal(
     preOrderTimeline: Metafield | null | undefined,
     inStockToPreOrderTransitionDate: Metafield | null | undefined,
-    orderDate: Date
+    orderDate: Date,
+    fulfillmentLocation: 'US' | 'CN',
   ): PreOrderTimeline | null {
     try {
       // 1. Does variant have a Pre-Order Timeline?
@@ -148,7 +152,7 @@ export class PreOrderTimeline {
       }
 
       // 4. Convert the metafield into a PreOrderTimeline instance, then check for applicable pre-order batch.
-      const timeline: PreOrderTimeline = PreOrderTimeline.fromMetaobjectList(preOrderTimeline, orderDate);
+      const timeline: PreOrderTimeline = PreOrderTimeline.fromMetaobjectList(preOrderTimeline, fulfillmentLocation, orderDate);
       if (timeline.getBatchForOrderDate() === null) {
         // No applicable pre-order batch found for the order date.
         return null;
@@ -188,7 +192,8 @@ export class PreOrderTimeline {
       const usTimeline: PreOrderTimeline | null = this.getByDateAndLocationInternal(
         preOrderUSTimeline,
         inStockToPreOrderUSTransitionDate,
-        orderDate
+        orderDate,
+        'US',
       );
 
       // 1a. If a US timeline is found, return it.
@@ -207,7 +212,8 @@ export class PreOrderTimeline {
     const wwTimeline: PreOrderTimeline | null = this.getByDateAndLocationInternal(
       preOrderWWTimeline,
       inStockToPreOrderWWTransitionDate,
-      orderDate
+      orderDate,
+      'CN',
     );
 
     // 2a. If an Int'l timeline is found, return it; otherwise, return an empty timeline.
@@ -221,10 +227,10 @@ export class PreOrderTimeline {
    * @returns PreOrderTimeline instance with parsed, validated, and sorted batches
    * @note Invalid batches are filtered out and logged; processing continues with valid batches
    */
-  static fromMetaobjectList(metaobjectList: Metafield | null | undefined, orderDate: Date = new Date()): PreOrderTimeline {
+  static fromMetaobjectList(metaobjectList: Metafield | null | undefined, fulfillmentLocation: 'US' | 'CN' = 'CN', orderDate: Date = new Date()): PreOrderTimeline {
     // 0. Handle null/undefined or missing references
     if (!metaobjectList || !metaobjectList.references) {
-      return new PreOrderTimeline([], orderDate);
+      return new PreOrderTimeline([], fulfillmentLocation, orderDate);
     }
 
     // 1. Parse all batches from metaobject edges, filtering out invalid ones
@@ -242,7 +248,7 @@ export class PreOrderTimeline {
 
     // 2. If no valid batches, return empty timeline
     if (parsedBatches.length === 0) {
-      return new PreOrderTimeline([], orderDate);
+      return new PreOrderTimeline([], fulfillmentLocation, orderDate);
     }
 
     // 3. Apply functional pipeline: deduplicate and sort
@@ -251,7 +257,15 @@ export class PreOrderTimeline {
     );
 
     // 4. Return new PreOrderTimeline instance
-    return new PreOrderTimeline(processedBatches, orderDate);
+    return new PreOrderTimeline(processedBatches, fulfillmentLocation, orderDate);
+  }
+
+  /**
+   * Gets the fulfillment location for this timeline
+   * @returns The fulfillment location ('US' or 'CN')
+   */
+  getFulfillmentLocation(): 'US' | 'CN' {
+    return this.fulfillmentLocation;
   }
 
   /**
