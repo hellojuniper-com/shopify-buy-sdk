@@ -3,7 +3,7 @@ import { __testing__, PreOrderBatch, PreOrderTimeline } from '../src/pre-order-t
 import { Metafield, MetafieldReferenceMetaobject, MetaobjectField } from '../shared/types';
 import { validateDate, getFieldValue } from '../src/metafield-utils';
 
-const { parseMetaobjectFieldList, deduplicateOpenEndedBatches, sortBatchesByOrderCutoffDate } = __testing__;
+const { parseMetaobjectFieldList, sortBatchesChronologically } = __testing__;
 
 // Helper function to create a Metafield with metaobject references for testing
 function createMetaobjectList(batches: Array<{ cutoff: string | null, shipping: string }>): Metafield {
@@ -263,145 +263,7 @@ describe('parseMetaobjectFields', () => {
   });
 });
 
-describe('deduplicateOpenEndedBatches', () => {
-  describe('no deduplication needed', () => {
-    it('should return new array when no open-ended batches exist', () => {
-      const batches = [
-        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') },
-        { orderCutoffDate: new Date('2025-02-15'), estimatedShippingDate: new Date('2025-03-01') }
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result).toEqual(batches);
-      expect(result).not.toBe(batches); // Should be a new array (immutability)
-      expect(result.length).toBe(2);
-    });
-
-    it('should return new array when exactly one open-ended batch exists', () => {
-      const batches = [
-        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') },
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') }
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result).toEqual(batches);
-      expect(result).not.toBe(batches); // Should be a new array (immutability)
-      expect(result.length).toBe(2);
-    });
-
-    it('should return new empty array when input is empty', () => {
-      const batches: PreOrderBatch[] = [];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result).toEqual([]);
-      expect(result).not.toBe(batches); // Should be a new array (immutability)
-    });
-
-    it('should not modify original array', () => {
-      const batches = [
-        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') }
-      ];
-      const original = [...batches];
-      deduplicateOpenEndedBatches(batches);
-
-      expect(batches).toEqual(original);
-    });
-  });
-
-  describe('deduplication needed', () => {
-    it('should keep only the open-ended batch with latest shipping date', () => {
-      const batches = [
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-01-15') },
-        { orderCutoffDate: new Date('2025-01-01'), estimatedShippingDate: new Date('2025-02-01') },
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') }, // Latest
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-02-15') }
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result.length).toBe(2); // 1 closed + 1 open-ended
-      expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-01'));
-      expect(result[1].orderCutoffDate).toBeNull();
-      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-03-01'));
-    });
-
-    it('should handle all batches being open-ended', () => {
-      const batches = [
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-01-15') },
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') }, // Latest
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-02-15') }
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result.length).toBe(1);
-      expect(result[0].orderCutoffDate).toBeNull();
-      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
-    });
-
-    it('should keep first when multiple open-ended batches have same shipping date', () => {
-      const batch1 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') };
-      const batch2 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') };
-      const batch3 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') };
-      const batches = [batch1, batch2, batch3];
-
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result.length).toBe(1);
-      expect(result[0]).toBe(batch1); // Should keep first one (tie-breaking)
-    });
-
-    it('should preserve closed batches when deduplicating', () => {
-      const closed1 = { orderCutoffDate: new Date('2025-01-01'), estimatedShippingDate: new Date('2025-02-01') };
-      const closed2 = { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-03-01') };
-      const openEarly = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-04-01') };
-      const openLate = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-05-01') }; // Latest
-
-      const batches = [closed1, openEarly, closed2, openLate];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result.length).toBe(3);
-      expect(result).toContain(closed1);
-      expect(result).toContain(closed2);
-      expect(result).toContain(openLate);
-      expect(result).not.toContain(openEarly);
-    });
-
-    it('should return new array after deduplication', () => {
-      const batches = [
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-01-15') },
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') }
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result).not.toBe(batches); // Should be a new array
-    });
-  });
-
-  describe('edge cases', () => {
-    it('should handle two open-ended batches', () => {
-      const batches = [
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-01-15') },
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') } // Latest
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result.length).toBe(1);
-      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
-    });
-
-    it('should handle single open-ended batch', () => {
-      const batches = [
-        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') }
-      ];
-      const result = deduplicateOpenEndedBatches(batches);
-
-      expect(result.length).toBe(1);
-      expect(result[0]).toEqual(batches[0]);
-      expect(result).not.toBe(batches);
-    });
-  });
-});
-
-describe('sortBatchesByOrderCutoffDate', () => {
+describe('sortBatchesChronologically', () => {
   describe('sorting closed batches', () => {
     it('should sort batches chronologically when all have cutoff dates', () => {
       const batches = [
@@ -409,7 +271,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') },
         { orderCutoffDate: new Date('2025-02-15'), estimatedShippingDate: new Date('2025-03-15') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(3);
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15')); // Oldest first
@@ -417,18 +279,19 @@ describe('sortBatchesByOrderCutoffDate', () => {
       expect(result[2].orderCutoffDate).toEqual(new Date('2025-03-01')); // Newest last
     });
 
-    it('should maintain stable sort for batches with same cutoff date', () => {
-      const batch1 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
-      const batch2 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-03-01') };
-      const batch3 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-04-01') };
+    it('should sort by estimatedShippingDate when cutoff dates are equal', () => {
+      const batch1 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-04-01') };
+      const batch2 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
+      const batch3 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-03-01') };
       const batches = [batch1, batch2, batch3];
 
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(3);
-      expect(result[0]).toBe(batch1); // Same order preserved
-      expect(result[1]).toBe(batch2);
-      expect(result[2]).toBe(batch3);
+      // Sorted by estimatedShippingDate (earliest first)
+      expect(result[0]).toBe(batch2); // Feb 1
+      expect(result[1]).toBe(batch3); // Mar 1
+      expect(result[2]).toBe(batch1); // Apr 1
     });
 
     it('should sort already sorted array correctly', () => {
@@ -437,7 +300,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-02-15'), estimatedShippingDate: new Date('2025-03-01') },
         { orderCutoffDate: new Date('2025-03-15'), estimatedShippingDate: new Date('2025-04-01') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
       expect(result[1].orderCutoffDate).toEqual(new Date('2025-02-15'));
@@ -452,7 +315,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-03-01') },
         { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-15') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(3);
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15')); // Oldest closed
@@ -467,7 +330,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
       const batch4 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-15') };
       const batches = [batch1, batch2, batch3, batch4];
 
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(4);
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
@@ -476,33 +339,34 @@ describe('sortBatchesByOrderCutoffDate', () => {
       expect(result[3].orderCutoffDate).toBeNull();
     });
 
-    it('should preserve order of null batches (stable sort)', () => {
+    it('should sort null batches by estimatedShippingDate', () => {
       const batch1 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-05-01') };
       const batch2 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') };
       const batch3 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-06-01') };
       const batches = [batch1, batch2, batch3];
 
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(3);
-      expect(result[0]).toBe(batch1); // Order preserved
-      expect(result[1]).toBe(batch2);
-      expect(result[2]).toBe(batch3);
+      // Sorted by estimatedShippingDate (earliest first)
+      expect(result[0]).toBe(batch2); // Mar 1
+      expect(result[1]).toBe(batch1); // May 1
+      expect(result[2]).toBe(batch3); // Jun 1
     });
 
-    it('should handle all null cutoff dates', () => {
+    it('should handle all null cutoff dates by sorting by estimatedShippingDate', () => {
       const batches = [
         { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') },
         { orderCutoffDate: null, estimatedShippingDate: new Date('2025-01-15') },
         { orderCutoffDate: null, estimatedShippingDate: new Date('2025-02-01') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(3);
-      // All null, so order should be preserved (stable sort)
-      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
-      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-01-15'));
-      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-02-01'));
+      // Sorted by estimatedShippingDate (earliest first)
+      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-01-15'));
+      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-02-01'));
+      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-03-01'));
     });
   });
 
@@ -511,7 +375,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
       const batches = [
         { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(1);
       expect(result[0]).toEqual(batches[0]);
@@ -521,7 +385,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
       const batches = [
         { orderCutoffDate: null, estimatedShippingDate: new Date('2025-02-01') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(1);
       expect(result[0]).toEqual(batches[0]);
@@ -529,7 +393,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
 
     it('should handle empty array', () => {
       const batches: PreOrderBatch[] = [];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result).toEqual([]);
     });
@@ -539,7 +403,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') },
         { orderCutoffDate: new Date('2025-02-15'), estimatedShippingDate: new Date('2025-03-01') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result).not.toBe(batches);
     });
@@ -550,7 +414,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') }
       ];
       const original = [...batches];
-      sortBatchesByOrderCutoffDate(batches);
+      sortBatchesChronologically(batches);
 
       expect(batches).toEqual(original);
     });
@@ -563,7 +427,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-12-15'), estimatedShippingDate: new Date('2026-01-01') },
         { orderCutoffDate: null, estimatedShippingDate: new Date('2026-03-01') }
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-12-15')); // Oldest
       expect(result[1].orderCutoffDate).toEqual(new Date('2026-01-15'));
@@ -576,12 +440,69 @@ describe('sortBatchesByOrderCutoffDate', () => {
         { orderCutoffDate: new Date('2025-02-15'), estimatedShippingDate: new Date('2025-03-15') }, // Batch 2
         { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-15') }  // Batch 1
       ];
-      const result = sortBatchesByOrderCutoffDate(batches);
+      const result = sortBatchesChronologically(batches);
 
       expect(result.length).toBe(3);
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
       expect(result[1].orderCutoffDate).toEqual(new Date('2025-02-15'));
       expect(result[2].orderCutoffDate).toBeNull();
+    });
+
+    it('should sort by cutoff date first, then by estimated shipping date as tie-breaker', () => {
+      const batches = [
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-04-01') },
+        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-03-15') },
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-03-01') },
+        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-15') }
+      ];
+      const result = sortBatchesChronologically(batches);
+
+      expect(result.length).toBe(4);
+      // First by cutoff date (Jan 15), then by estimated shipping date
+      expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-02-15'));
+      expect(result[1].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-03-15'));
+      // Then cutoff date (Feb 1), then by estimated shipping date
+      expect(result[2].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(result[3].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[3].estimatedShippingDate).toEqual(new Date('2025-04-01'));
+    });
+
+    it('should handle mixed closed and null batches with tie-breakers', () => {
+      const batches = [
+        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-07-01') },
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-04-01') },
+        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-06-01') },
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-03-01') }
+      ];
+      const result = sortBatchesChronologically(batches);
+
+      expect(result.length).toBe(4);
+      // Closed batches first, sorted by cutoff date then estimated shipping date
+      expect(result[0].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(result[1].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-04-01'));
+      // Null batches last, sorted by estimated shipping date
+      expect(result[2].orderCutoffDate).toBeNull();
+      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-06-01'));
+      expect(result[3].orderCutoffDate).toBeNull();
+      expect(result[3].estimatedShippingDate).toEqual(new Date('2025-07-01'));
+    });
+
+    it('should handle batches with identical cutoff and estimated shipping dates', () => {
+      const batch1 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
+      const batch2 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
+      const batches = [batch1, batch2];
+
+      const result = sortBatchesChronologically(batches);
+
+      expect(result.length).toBe(2);
+      // Both have same dates, order is stable (comparison returns 0)
+      expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(result[1].orderCutoffDate).toEqual(new Date('2025-01-15'));
     });
   });
 });
@@ -700,20 +621,22 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
       expect(batches[2].orderCutoffDate).toBeNull();
     });
 
-    it('should deduplicate multiple open-ended batches', () => {
+    it('should preserve multiple open-ended batches', () => {
       const metaobjectList = createMetaobjectList([
         { cutoff: null, shipping: '2025-03-01' },
         { cutoff: '2025-01-15', shipping: '2025-02-15' },
-        { cutoff: null, shipping: '2025-05-01' } // Latest open-ended
+        { cutoff: null, shipping: '2025-05-01' }
       ]);
 
       const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList);
       const batches = timeline.getBatches();
 
-      expect(batches.length).toBe(2); // Should have deduplicated to 1 closed + 1 open-ended
-      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
-      expect(batches[1].orderCutoffDate).toBeNull();
-      expect(batches[1].estimatedShippingDate).toEqual(new Date('2025-05-01')); // Latest kept
+      expect(batches.length).toBe(3); // All batches preserved
+      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-15')); // Closed first
+      expect(batches[1].orderCutoffDate).toBeNull(); // Open-ended sorted by shipping date
+      expect(batches[1].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(batches[2].orderCutoffDate).toBeNull();
+      expect(batches[2].estimatedShippingDate).toEqual(new Date('2025-05-01'));
     });
 
     it('should preserve custom orderDate for multiple batches', () => {
@@ -729,9 +652,104 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
     });
   });
 
+  describe('multiple open-ended batches', () => {
+    it('should sort multiple open-ended batches by estimatedShippingDate', () => {
+      const metaobjectList = createMetaobjectList([
+        { cutoff: null, shipping: '2025-06-01' },
+        { cutoff: null, shipping: '2025-03-01' },
+        { cutoff: null, shipping: '2025-09-01' }
+      ]);
+
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList);
+      const batches = timeline.getBatches();
+
+      expect(batches.length).toBe(3);
+      // All open-ended batches sorted by estimatedShippingDate (earliest first)
+      expect(batches[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(batches[1].estimatedShippingDate).toEqual(new Date('2025-06-01'));
+      expect(batches[2].estimatedShippingDate).toEqual(new Date('2025-09-01'));
+    });
+
+    it('should place all open-ended batches after closed batches', () => {
+      const metaobjectList = createMetaobjectList([
+        { cutoff: null, shipping: '2025-04-01' },
+        { cutoff: '2025-02-01', shipping: '2025-03-01' },
+        { cutoff: null, shipping: '2025-06-01' },
+        { cutoff: '2025-01-15', shipping: '2025-02-15' },
+        { cutoff: null, shipping: '2025-05-01' }
+      ]);
+
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList);
+      const batches = timeline.getBatches();
+
+      expect(batches.length).toBe(5);
+      // Closed batches first, sorted by orderCutoffDate
+      expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(batches[1].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      // Open-ended batches last, sorted by estimatedShippingDate
+      expect(batches[2].orderCutoffDate).toBeNull();
+      expect(batches[2].estimatedShippingDate).toEqual(new Date('2025-04-01'));
+      expect(batches[3].orderCutoffDate).toBeNull();
+      expect(batches[3].estimatedShippingDate).toEqual(new Date('2025-05-01'));
+      expect(batches[4].orderCutoffDate).toBeNull();
+      expect(batches[4].estimatedShippingDate).toEqual(new Date('2025-06-01'));
+    });
+
+    it('should return first open-ended batch for getBatchForOrderDate when past all cutoff dates', () => {
+      const metaobjectList = createMetaobjectList([
+        { cutoff: '2025-01-15', shipping: '2025-02-15' },
+        { cutoff: null, shipping: '2025-06-01' },
+        { cutoff: null, shipping: '2025-04-01' }
+      ]);
+
+      // Order date is after all cutoff dates
+      const orderDate = new Date('2025-02-01');
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, 'CN', orderDate);
+      const batch = timeline.getBatchForOrderDate();
+
+      // Should return the first open-ended batch (earliest shipping date)
+      expect(batch).not.toBeNull();
+      expect(batch!.orderCutoffDate).toBeNull();
+      expect(batch!.estimatedShippingDate).toEqual(new Date('2025-04-01'));
+    });
+
+    it('should return correct estimated shipping date with multiple open-ended batches', () => {
+      const metaobjectList = createMetaobjectList([
+        { cutoff: '2025-01-15', shipping: '2025-02-15' },
+        { cutoff: null, shipping: '2025-06-01' },
+        { cutoff: null, shipping: '2025-04-01' }
+      ]);
+
+      // Order date is after all cutoff dates
+      const orderDate = new Date('2025-02-01');
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList, 'CN', orderDate);
+
+      // Should return the shipping date of the first open-ended batch (earliest)
+      expect(timeline.getEstimatedShippingDate()).toEqual(new Date('2025-04-01'));
+    });
+
+    it('should handle open-ended batches with identical shipping dates', () => {
+      const metaobjectList = createMetaobjectList([
+        { cutoff: null, shipping: '2025-04-01' },
+        { cutoff: null, shipping: '2025-04-01' },
+        { cutoff: null, shipping: '2025-04-01' }
+      ]);
+
+      const timeline = PreOrderTimeline.fromMetaobjectList(metaobjectList);
+      const batches = timeline.getBatches();
+
+      expect(batches.length).toBe(3);
+      // All have the same dates, all preserved
+      batches.forEach(batch => {
+        expect(batch.orderCutoffDate).toBeNull();
+        expect(batch.estimatedShippingDate).toEqual(new Date('2025-04-01'));
+      });
+    });
+  });
+
   describe('error handling - resilient filtering', () => {
     it('should filter out batch missing estimatedShippingDate', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const metaobjectList: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -763,7 +781,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
     });
 
     it('should filter out batch with invalid date format', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const metaobjectList: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -791,7 +809,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
     });
 
     it('should keep valid batches and filter out invalid ones', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const metaobjectList: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -841,7 +859,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
     });
 
     it('should filter out batch when fields is not an array', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const metaobjectList: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -867,7 +885,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
     });
 
     it('should include batch index in error message', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const metaobjectList: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -910,7 +928,7 @@ describe('PreOrderTimeline.fromMetaobjectList', () => {
     });
 
     it('should handle all invalid batches gracefully', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const metaobjectList: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -1543,7 +1561,7 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
 
   describe('error handling', () => {
     it('should return empty timeline on parsing error', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       const invalidTimeline: Metafield = {
         id: 'gid://shopify/Metafield/123',
@@ -1582,7 +1600,7 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
     });
 
     it('should log error and return empty timeline on exception in try-catch', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
       // This will cause an error when accessing .value on undefined
       const timeline = PreOrderTimeline.getByDateAndLocation(
@@ -1634,11 +1652,11 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
       expect(batches[2].orderCutoffDate).toBeNull();
     });
 
-    it('should handle international customer with deduplication', () => {
+    it('should handle international customer with multiple open-ended batches', () => {
       const wwTimeline = createMetaobjectList([
         { cutoff: '2025-01-15', shipping: '2025-02-01' },
         { cutoff: null, shipping: '2025-03-01' },
-        { cutoff: null, shipping: '2025-04-01' } // Should be deduplicated to latest
+        { cutoff: null, shipping: '2025-04-01' }
       ]);
 
       const timeline = PreOrderTimeline.getByDateAndLocation(
@@ -1655,10 +1673,12 @@ describe('PreOrderTimeline.getByDateAndLocation', () => {
       );
 
       const batches = timeline.getBatches();
-      expect(batches.length).toBe(2); // 1 closed + 1 deduplicated open-ended
+      expect(batches.length).toBe(3); // 1 closed + 2 open-ended (all preserved)
       expect(batches[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
       expect(batches[1].orderCutoffDate).toBeNull();
-      expect(batches[1].estimatedShippingDate).toEqual(new Date('2025-04-01')); // Latest kept
+      expect(batches[1].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(batches[2].orderCutoffDate).toBeNull();
+      expect(batches[2].estimatedShippingDate).toEqual(new Date('2025-04-01'));
     });
   });
 });
