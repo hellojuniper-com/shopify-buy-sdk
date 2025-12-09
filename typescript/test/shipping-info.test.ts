@@ -104,6 +104,21 @@ describe('ShippingInfo', () => {
 
       expect(shippingInfo.isInStock()).toBe(true);
     });
+
+    it('should return true when preOrderShipOutDate equals orderDate', () => {
+      const sameDate = new Date('2025-02-01');
+      const shippingInfo = new ShippingInfo(
+        sameDate,  // orderDate
+        sameDate,  // preOrderShipOutDate (same as orderDate)
+        { minDays: 1, maxDays: 3 },
+        { minDays: 7, maxDays: 16 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      expect(shippingInfo.isInStock()).toBe(true);
+    });
   });
 
   describe('getShipOutDate', () => {
