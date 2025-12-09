@@ -417,18 +417,19 @@ describe('sortBatchesByOrderCutoffDate', () => {
       expect(result[2].orderCutoffDate).toEqual(new Date('2025-03-01')); // Newest last
     });
 
-    it('should maintain stable sort for batches with same cutoff date', () => {
-      const batch1 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
-      const batch2 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-03-01') };
-      const batch3 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-04-01') };
+    it('should sort by estimatedShippingDate when cutoff dates are equal', () => {
+      const batch1 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-04-01') };
+      const batch2 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
+      const batch3 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-03-01') };
       const batches = [batch1, batch2, batch3];
 
       const result = sortBatchesByOrderCutoffDate(batches);
 
       expect(result.length).toBe(3);
-      expect(result[0]).toBe(batch1); // Same order preserved
-      expect(result[1]).toBe(batch2);
-      expect(result[2]).toBe(batch3);
+      // Sorted by estimatedShippingDate (earliest first)
+      expect(result[0]).toBe(batch2); // Feb 1
+      expect(result[1]).toBe(batch3); // Mar 1
+      expect(result[2]).toBe(batch1); // Apr 1
     });
 
     it('should sort already sorted array correctly', () => {
@@ -476,7 +477,7 @@ describe('sortBatchesByOrderCutoffDate', () => {
       expect(result[3].orderCutoffDate).toBeNull();
     });
 
-    it('should preserve order of null batches (stable sort)', () => {
+    it('should sort null batches by estimatedShippingDate', () => {
       const batch1 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-05-01') };
       const batch2 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') };
       const batch3 = { orderCutoffDate: null, estimatedShippingDate: new Date('2025-06-01') };
@@ -485,12 +486,13 @@ describe('sortBatchesByOrderCutoffDate', () => {
       const result = sortBatchesByOrderCutoffDate(batches);
 
       expect(result.length).toBe(3);
-      expect(result[0]).toBe(batch1); // Order preserved
-      expect(result[1]).toBe(batch2);
-      expect(result[2]).toBe(batch3);
+      // Sorted by estimatedShippingDate (earliest first)
+      expect(result[0]).toBe(batch2); // Mar 1
+      expect(result[1]).toBe(batch1); // May 1
+      expect(result[2]).toBe(batch3); // Jun 1
     });
 
-    it('should handle all null cutoff dates', () => {
+    it('should handle all null cutoff dates by sorting by estimatedShippingDate', () => {
       const batches = [
         { orderCutoffDate: null, estimatedShippingDate: new Date('2025-03-01') },
         { orderCutoffDate: null, estimatedShippingDate: new Date('2025-01-15') },
@@ -499,10 +501,10 @@ describe('sortBatchesByOrderCutoffDate', () => {
       const result = sortBatchesByOrderCutoffDate(batches);
 
       expect(result.length).toBe(3);
-      // All null, so order should be preserved (stable sort)
-      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
-      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-01-15'));
-      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-02-01'));
+      // Sorted by estimatedShippingDate (earliest first)
+      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-01-15'));
+      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-02-01'));
+      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-03-01'));
     });
   });
 
@@ -582,6 +584,63 @@ describe('sortBatchesByOrderCutoffDate', () => {
       expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
       expect(result[1].orderCutoffDate).toEqual(new Date('2025-02-15'));
       expect(result[2].orderCutoffDate).toBeNull();
+    });
+
+    it('should sort by cutoff date first, then by estimated shipping date as tie-breaker', () => {
+      const batches = [
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-04-01') },
+        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-03-15') },
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-03-01') },
+        { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-15') }
+      ];
+      const result = sortBatchesByOrderCutoffDate(batches);
+
+      expect(result.length).toBe(4);
+      // First by cutoff date (Jan 15), then by estimated shipping date
+      expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-02-15'));
+      expect(result[1].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-03-15'));
+      // Then cutoff date (Feb 1), then by estimated shipping date
+      expect(result[2].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(result[3].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[3].estimatedShippingDate).toEqual(new Date('2025-04-01'));
+    });
+
+    it('should handle mixed closed and null batches with tie-breakers', () => {
+      const batches = [
+        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-07-01') },
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-04-01') },
+        { orderCutoffDate: null, estimatedShippingDate: new Date('2025-06-01') },
+        { orderCutoffDate: new Date('2025-02-01'), estimatedShippingDate: new Date('2025-03-01') }
+      ];
+      const result = sortBatchesByOrderCutoffDate(batches);
+
+      expect(result.length).toBe(4);
+      // Closed batches first, sorted by cutoff date then estimated shipping date
+      expect(result[0].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[0].estimatedShippingDate).toEqual(new Date('2025-03-01'));
+      expect(result[1].orderCutoffDate).toEqual(new Date('2025-02-01'));
+      expect(result[1].estimatedShippingDate).toEqual(new Date('2025-04-01'));
+      // Null batches last, sorted by estimated shipping date
+      expect(result[2].orderCutoffDate).toBeNull();
+      expect(result[2].estimatedShippingDate).toEqual(new Date('2025-06-01'));
+      expect(result[3].orderCutoffDate).toBeNull();
+      expect(result[3].estimatedShippingDate).toEqual(new Date('2025-07-01'));
+    });
+
+    it('should handle batches with identical cutoff and estimated shipping dates', () => {
+      const batch1 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
+      const batch2 = { orderCutoffDate: new Date('2025-01-15'), estimatedShippingDate: new Date('2025-02-01') };
+      const batches = [batch1, batch2];
+
+      const result = sortBatchesByOrderCutoffDate(batches);
+
+      expect(result.length).toBe(2);
+      // Both have same dates, order is stable (comparison returns 0)
+      expect(result[0].orderCutoffDate).toEqual(new Date('2025-01-15'));
+      expect(result[1].orderCutoffDate).toEqual(new Date('2025-01-15'));
     });
   });
 });

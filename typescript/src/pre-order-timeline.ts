@@ -82,19 +82,29 @@ const deduplicateOpenEndedBatches = (batches: PreOrderBatch[]): PreOrderBatch[] 
 };
 
 /**
- * Sorts batches by orderCutoffDate (nulls last)
+ * Sorts batches by orderCutoffDate (nulls last), with estimatedShippingDate as tie-breaker
  * @param batches - Array of batch objects
  * @returns New sorted array with closed batches first (oldest to newest), open-ended batches last
- * @note Uses stable sort - batches with equal cutoff dates maintain their relative order
  */
 const sortBatchesByOrderCutoffDate = (batches: PreOrderBatch[]): PreOrderBatch[] =>
   [...batches].sort((a, b) => {
     // Null cutoff dates should come last (current/final batch)
+    if (a.orderCutoffDate === null && b.orderCutoffDate === null) {
+      // Both null - sort by estimatedShippingDate (earliest first)
+      return a.estimatedShippingDate.getTime() - b.estimatedShippingDate.getTime();
+    }
     if (a.orderCutoffDate === null) return 1;
     if (b.orderCutoffDate === null) return -1;
 
-    // Sort by date (oldest first)
-    return a.orderCutoffDate.getTime() - b.orderCutoffDate.getTime();
+    // Sort by orderCutoffDate (oldest first)
+    const cutoffComparison = a.orderCutoffDate.getTime() - b.orderCutoffDate.getTime();
+
+    // If cutoff dates are equal, sort by estimatedShippingDate (earliest first)
+    if (cutoffComparison === 0) {
+      return a.estimatedShippingDate.getTime() - b.estimatedShippingDate.getTime();
+    }
+
+    return cutoffComparison;
   });
 
 /**

@@ -43,12 +43,12 @@ export class ShippingInfo {
     }
 
     public isInStock(): boolean {
-        return (this.preOrderShipOutDate === null);
+        return (this.preOrderShipOutDate === null) || (this.preOrderShipOutDate <= this.orderDate);
     }
 
     public getShipOutDate(): Date {
         const inStockShipOutDate = addBusinessDays(this.orderDate, this.processingInfo.maxDays);
-        return this.preOrderShipOutDate ? new Date(this.preOrderShipOutDate) : inStockShipOutDate;
+        return this.isInStock() ? inStockShipOutDate : new Date(this.preOrderShipOutDate!);
     }
 
     public getArrivalDate(): Date {

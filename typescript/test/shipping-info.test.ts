@@ -90,6 +90,20 @@ describe('ShippingInfo', () => {
 
       expect(shippingInfo.isInStock()).toBe(false);
     });
+
+    it('should return true when preOrderShipOutDate is before orderDate', () => {
+      const shippingInfo = new ShippingInfo(
+        new Date('2025-02-01'),  // orderDate
+        new Date('2025-01-15'),  // preOrderShipOutDate (before orderDate)
+        { minDays: 1, maxDays: 3 },
+        { minDays: 7, maxDays: 16 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      expect(shippingInfo.isInStock()).toBe(true);
+    });
   });
 
   describe('getShipOutDate', () => {
@@ -146,6 +160,27 @@ describe('ShippingInfo', () => {
 
       // Original should not be modified
       expect(shippingInfo.getShipOutDate().toISOString()).toBe('2025-02-01T00:00:00.000Z');
+    });
+
+    it('should return orderDate + maxProcessingDays when preOrderShipOutDate is before orderDate', () => {
+      // Monday, February 3, 2025 at noon
+      const orderDate = new Date(2025, 1, 3, 12, 0, 0);
+      const preOrderShipOutDate = new Date(2025, 0, 15, 12, 0, 0); // Jan 15 - before order date
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        preOrderShipOutDate,
+        { minDays: 1, maxDays: 3 },
+        { minDays: 7, maxDays: 16 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const shipOutDate = shippingInfo.getShipOutDate();
+      // Should use in-stock logic: 3 business days from Mon Feb 3 = Thu Feb 6
+      expect(shipOutDate.getFullYear()).toBe(2025);
+      expect(shipOutDate.getMonth()).toBe(1); // February
+      expect(shipOutDate.getDate()).toBe(6);
     });
   });
 
@@ -271,6 +306,34 @@ describe('ShippingInfo', () => {
       expect(dateRange.latest.getFullYear()).toBe(2025);
       expect(dateRange.latest.getMonth()).toBe(0); // January
       expect(dateRange.latest.getDate()).toBe(16);
+    });
+
+    it('should use in-stock calculation when preOrderShipOutDate is before orderDate', () => {
+      // Monday, February 3, 2025 at noon
+      const orderDate = new Date(2025, 1, 3, 12, 0, 0);
+      const preOrderShipOutDate = new Date(2025, 0, 15, 12, 0, 0); // Jan 15 - before order date
+      const shippingInfo = new ShippingInfo(
+        orderDate,
+        preOrderShipOutDate,
+        { minDays: 1, maxDays: 3 },
+        { minDays: 5, maxDays: 10 },
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const dateRange = shippingInfo.getArrivalDateRange();
+
+      // Should use in-stock logic: processing + delivery from order date
+      // Earliest: 1 + 5 = 6 business days from Mon Feb 3 = Tue Feb 11
+      expect(dateRange.earliest.getFullYear()).toBe(2025);
+      expect(dateRange.earliest.getMonth()).toBe(1); // February
+      expect(dateRange.earliest.getDate()).toBe(11);
+
+      // Latest: 3 + 10 = 13 business days from Mon Feb 3 = Thu Feb 20
+      expect(dateRange.latest.getFullYear()).toBe(2025);
+      expect(dateRange.latest.getMonth()).toBe(1); // February
+      expect(dateRange.latest.getDate()).toBe(20);
     });
   });
 
@@ -560,6 +623,25 @@ describe('ShippingInfo', () => {
       const result = shippingInfo.getShipsOutAndArrivesDisplayValues();
       expect(result.shipsOut).toBeInstanceOf(Date);
       expect((result.shipsOut as Date).toISOString()).toBe('2025-02-01T00:00:00.000Z');
+      expect(result.arrives).toEqual(deliveryInfo);
+    });
+
+    it('should return processing info as shipsOut when preOrderShipOutDate is before orderDate', () => {
+      const processingInfo = { minDays: 1, maxDays: 3 };
+      const deliveryInfo = { minDays: 7, maxDays: 16 };
+      const shippingInfo = new ShippingInfo(
+        new Date('2025-02-01'),  // orderDate
+        new Date('2025-01-15'),  // preOrderShipOutDate (before orderDate)
+        processingInfo,
+        deliveryInfo,
+        'CN',
+        'US',
+        new Date('2025-12-12')
+      );
+
+      const result = shippingInfo.getShipsOutAndArrivesDisplayValues();
+      // Should use in-stock logic: return processing info, not ship out date
+      expect(result.shipsOut).toEqual(processingInfo);
       expect(result.arrives).toEqual(deliveryInfo);
     });
   });
