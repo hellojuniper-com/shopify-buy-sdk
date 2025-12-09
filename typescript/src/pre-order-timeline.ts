@@ -57,36 +57,11 @@ const parseMetaobjectFieldList = (fields: MetaobjectField[]): PreOrderBatch => {
 };
 
 /**
- * Deduplicates open-ended batches (null orderCutoffDate) by keeping only the one with the latest estimatedShippingDate
+ * Sorts batches chronologically by orderCutoffDate and estimatedShippingDate, but with null orderCutoffDates last
  * @param batches - Array of batch objects
- * @returns New array with at most one open-ended batch (the one with latest shipping date)
- * @note If multiple open-ended batches have the same estimatedShippingDate, the first one encountered is kept
+ * @returns New sorted array with closed batches first (oldest to newest) and open-ended batches last
  */
-const deduplicateOpenEndedBatches = (batches: PreOrderBatch[]): PreOrderBatch[] => {
-  const openEndedBatches = batches.filter(batch => batch.orderCutoffDate === null);
-  const closedBatches = batches.filter(batch => batch.orderCutoffDate !== null);
-
-  // If there's 0 or 1 open-ended batch, no deduplication needed
-  if (openEndedBatches.length <= 1) {
-    return [...batches];  // Return new array for immutability
-  }
-
-  // Keep only the open-ended batch with the latest estimatedShippingDate
-  const latestOpenEndedBatch = openEndedBatches.reduce((latest, current) =>
-    current.estimatedShippingDate.getTime() > latest.estimatedShippingDate.getTime()
-      ? current
-      : latest
-  );
-
-  return [...closedBatches, latestOpenEndedBatch];
-};
-
-/**
- * Sorts batches by orderCutoffDate (nulls last), with estimatedShippingDate as tie-breaker
- * @param batches - Array of batch objects
- * @returns New sorted array with closed batches first (oldest to newest), open-ended batches last
- */
-const sortBatchesByOrderCutoffDate = (batches: PreOrderBatch[]): PreOrderBatch[] =>
+const sortBatchesChronologically = (batches: PreOrderBatch[]): PreOrderBatch[] =>
   [...batches].sort((a, b) => {
     // Null cutoff dates should come last (current/final batch)
     if (a.orderCutoffDate === null && b.orderCutoffDate === null) {
@@ -261,10 +236,8 @@ export class PreOrderTimeline {
       return new PreOrderTimeline([], fulfillmentLocation, orderDate);
     }
 
-    // 3. Apply functional pipeline: deduplicate and sort
-    const processedBatches = sortBatchesByOrderCutoffDate(
-      deduplicateOpenEndedBatches(parsedBatches)
-    );
+    // 3. Sort pre-order batches by orderCutoffDate and estimatedShippingDate
+    const processedBatches = sortBatchesChronologically(parsedBatches);
 
     // 4. Return new PreOrderTimeline instance
     return new PreOrderTimeline(processedBatches, fulfillmentLocation, orderDate);
@@ -367,8 +340,7 @@ export class PreOrderTimeline {
 // Export private functions for testing
 export const __testing__ = {
   parseMetaobjectFieldList,
-  deduplicateOpenEndedBatches,
-  sortBatchesByOrderCutoffDate,
+  sortBatchesChronologically,
 };
 
 export default PreOrderTimeline;
