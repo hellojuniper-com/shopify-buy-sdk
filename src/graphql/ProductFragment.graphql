@@ -93,6 +93,7 @@ fragment ProductFragment on Product {
     {namespace: "productListing", key: "outOfStockPolicy"},
     {namespace: "productListing", key: "isBundleExclusive"},
     {namespace: "productListing", key: "maxQtyInCart"},
+    {namespace: "productListing", key: "audioCardDescription"},
   ]) {
     ...MetafieldWithReferenceFragment
   }
