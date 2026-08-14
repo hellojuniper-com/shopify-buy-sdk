@@ -54,6 +54,10 @@ export class PromotionAttribution {
      * near the practical URL limit before attribution is appended. Overflowing the URL and
      * breaking checkout would be far worse than losing attribution on an unusually large cart, so
      * the value is truncated at a pair boundary rather than allowed to grow without bound.
+     *
+     * <p>Measured against the *percent-encoded* value, since that is what the URL carries. Every
+     * `:` and `,` triples in length once encoded, so measuring the raw string would let roughly
+     * 16% more through than this budget claims to allow.
      */
     public static readonly MAX_VALUE_LENGTH: number = 1000;
 
@@ -78,7 +82,9 @@ export class PromotionAttribution {
                 return;
             }
             const variantId = PromotionAttribution.toLegacyId(assignment.variantId);
-            const promotionId = assignment.promotionId ? String(assignment.promotionId) : "";
+            // Trimmed here because `parse` trims: without this, `promotionId: "   "` encodes to a
+            // pair that decodes to nothing, and padding would silently eat the length budget.
+            const promotionId = assignment.promotionId ? String(assignment.promotionId).trim() : "";
             if (!variantId || !promotionId) {
                 return;
             }
@@ -120,7 +126,9 @@ export class PromotionAttribution {
             if (!variantId || !promotionId) {
                 return;
             }
-            if (!(variantId in attribution)) {
+            // Own-property test, not `in`: `in` walks the prototype chain, so a malformed pair
+            // keyed `constructor` or `toString` would read as already-present and be dropped.
+            if (!Object.prototype.hasOwnProperty.call(attribution, variantId)) {
                 attribution[variantId] = promotionId;
             }
         });
@@ -139,10 +147,15 @@ export class PromotionAttribution {
         variantId: string | number | undefined | null,
         attribution: { [legacyVariantId: string]: string },
     ): string | null {
-        if (!variantId || !attribution) {
+        if (variantId === null || variantId === undefined || variantId === "" || !attribution) {
             return null;
         }
         const legacyId = PromotionAttribution.toLegacyId(variantId);
+        // Guarded so an inherited member (`constructor`, `toString`) can never be returned as
+        // though it were a promotion ID, which would break the `string | null` contract.
+        if (!legacyId || !Object.prototype.hasOwnProperty.call(attribution, legacyId)) {
+            return null;
+        }
         return attribution[legacyId] || null;
     }
 
@@ -160,10 +173,25 @@ export class PromotionAttribution {
         return "attributes[" + PromotionAttribution.ATTRIBUTE_KEY + "]=" + encodeURIComponent(value);
     }
 
+    /**
+     * The legacy numeric ID for a variant, or `""` when the input is not one.
+     *
+     * <p>Accepts a GID or a bare numeric ID and nothing else. The pattern is anchored on purpose:
+     * an unanchored "trailing run of digits" match will happily manufacture a plausible-looking ID
+     * out of anything — `'12,34'` becomes `34`, `'abc123'` becomes `123`, `-5` becomes `5` — and a
+     * fabricated ID is worse than no ID, because it silently attributes a promotion to the wrong
+     * variant. It also swallowed the separator before {@link #containsSeparator} could see it,
+     * which left that guard dead for variant IDs.
+     *
+     * <p>Returning `""` lets the caller's existing emptiness check drop the pair.
+     */
     private static toLegacyId(id: string | number): string {
-        const asString = String(id === null || id === undefined ? "" : id);
-        const match = /(\d+)\s*$/.exec(asString);
-        return match ? match[1] : asString;
+        if (id === null || id === undefined) {
+            return "";
+        }
+        const asString = String(id).trim();
+        const match = /^(?:gid:\/\/shopify\/[A-Za-z]+\/)?(\d+)$/.exec(asString);
+        return match ? match[1] : "";
     }
 
     private static containsSeparator(token: string): boolean {
@@ -177,7 +205,7 @@ export class PromotionAttribution {
             const candidate = value
                 ? value + PromotionAttribution.PAIR_SEPARATOR + pairs[index]
                 : pairs[index];
-            if (candidate.length > PromotionAttribution.MAX_VALUE_LENGTH) {
+            if (encodeURIComponent(candidate).length > PromotionAttribution.MAX_VALUE_LENGTH) {
                 break;
             }
             value = candidate;

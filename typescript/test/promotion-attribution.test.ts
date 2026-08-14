@@ -65,6 +65,33 @@ describe('PromotionAttribution.encode', () => {
      * A stray separator inside an ID would silently re-shape every pair after it downstream, so
      * the offending pair is dropped rather than corrupting the payload.
      */
+    /**
+     * The mirror of the promotion-ID case below. This was previously unreachable: `toLegacyId`
+     * matched any trailing run of digits, so `'12,34'` was silently rewritten to `34` before the
+     * separator guard could see it -- attributing the promotion to a variant that was never in
+     * the cart.
+     */
+    it('drops a pair whose variant ID contains a separator', () => {
+        expect(PromotionAttribution.encode([
+            { variantId: '12,34', promotionId: 'promo-a' },
+            { variantId: '44125', promotionId: 'promo-c' },
+        ])).toEqual('44125:promo-c');
+    });
+
+    it('drops a variant ID that is not a GID or a bare number', () => {
+        // Each of these used to yield a fabricated, plausible-looking ID.
+        [
+            'abc123',
+            'gid://shopify/ProductVariant/123?x=1',
+            -5,
+            1.5,
+            'Z2lkOi8vc2hvcGlmeS9Qcm9kdWN0VmFyaWFudC80NDU=',
+        ].forEach((variantId) => {
+            expect(PromotionAttribution.encode([{ variantId: variantId as string | number, promotionId: 'p' }]))
+                .toEqual('');
+        });
+    });
+
     it('drops a pair whose promotion ID contains a separator', () => {
         expect(PromotionAttribution.encode([
             { variantId: '44123', promotionId: 'promo,a' },
@@ -137,7 +164,52 @@ describe('PromotionAttribution.parse', () => {
  * encoder runs in juniper-react and the decoder runs in a checkout extension in a different
  * repository; nothing else would catch the two drifting apart.
  */
+describe('PromotionAttribution prototype-key safety', () => {
+    it('does not treat an inherited member as an existing entry', () => {
+        expect(PromotionAttribution.parse('constructor:promo-a,toString:promo-b')).toEqual({
+            constructor: 'promo-a',
+            toString: 'promo-b',
+        });
+    });
+
+    it('never returns a non-string for an inherited key', () => {
+        const attribution = PromotionAttribution.parse('44123:promo-a');
+
+        ['constructor', 'toString', 'valueOf', '__proto__', 'hasOwnProperty'].forEach((key) => {
+            expect(PromotionAttribution.getPromotionIdForVariant(key, attribution)).toBeNull();
+        });
+    });
+});
+
 describe('PromotionAttribution round trip', () => {
+    /**
+     * The encoder must never emit a pair the decoder throws away. `parse` trims both fields, so
+     * whitespace-only input has to be rejected at encode time rather than surviving as a pair
+     * that decodes to nothing.
+     */
+    it('never encodes a pair that parse cannot recover', () => {
+        expect(PromotionAttribution.encode([{ variantId: '44123', promotionId: '   ' }])).toEqual('');
+        expect(PromotionAttribution.encode([{ variantId: '44123', promotionId: ' p ' }])).toEqual('44123:p');
+
+        const encoded = PromotionAttribution.encode([{ variantId: ' 44123 ', promotionId: ' p ' }]);
+
+        expect(PromotionAttribution.parse(encoded)).toEqual({ '44123': 'p' });
+    });
+
+    it('keeps the encoded value inside the length ceiling, not just the raw one', () => {
+        const assignments = [];
+
+        for (let index = 0; index < 200; index++) {
+            assignments.push({ variantId: `4995578809${index}`, promotionId: `2026071401${index}` });
+        }
+
+        const encoded = PromotionAttribution.encode(assignments);
+
+        // The URL carries the encoded form, so that is what the budget has to bound.
+        expect(encodeURIComponent(encoded).length).toBeLessThanOrEqual(PromotionAttribution.MAX_VALUE_LENGTH);
+        expect(encoded).not.toEqual('');
+    });
+
     it('recovers every assignment it encoded', () => {
         const attribution = PromotionAttribution.parse(PromotionAttribution.encode(keychainAssignments));
 
