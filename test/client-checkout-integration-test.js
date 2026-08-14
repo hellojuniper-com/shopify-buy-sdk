@@ -1,6 +1,23 @@
 import assert from 'assert';
 import Client from '../src/client';
 
+/**
+ * Strips the `key` query parameter from a checkout URL.
+ *
+ * `webUrl` maps to the Storefront Cart API's `cart.checkoutUrl`, which carries a signed `key`
+ * parameter that Shopify appends so buyer information survives into checkout
+ * (https://shopify.dev/changelog/storefront-api-cart-checkouturl-now-contains-key-param).
+ * Shopify mints a fresh key on each read, so two reads of the same cart return URLs that differ
+ * in that one parameter and nowhere else. Comparing the raw strings asserts something Shopify
+ * never promised, and it began failing once the key started varying per request.
+ *
+ * The cart identity is the path, so that is what gets compared. A fetch returning the wrong cart
+ * still fails this assertion.
+ */
+function withoutCheckoutUrlKey(url) {
+  return url.replace(/([?&])key=[^&]*&?/, '$1').replace(/[?&]$/, '');
+}
+
 suite('client-checkout-integration-test', () => {
   const domain = 'graphql.myshopify.com';
 
@@ -213,7 +230,7 @@ suite('client-checkout-integration-test', () => {
       return client.checkout.create({}).then((checkout) => {
         return client.checkout.fetch(checkout.id).then((updatedCheckout) => {
           assert.ok(typeof updatedCheckout.checkoutUrl === 'undefined');
-          assert.strictEqual(updatedCheckout.webUrl, checkout.webUrl);
+          assert.strictEqual(withoutCheckoutUrlKey(updatedCheckout.webUrl), withoutCheckoutUrlKey(checkout.webUrl));
         });
       });
     });
