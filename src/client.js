@@ -7,6 +7,7 @@ import CheckoutResource from './checkout-resource';
 import ImageResource from './image-resource';
 import PreOrderTimelineClass from '../dist/src/pre-order-timeline';
 import {ShippingInfo as ShippingInfoClass} from '../dist/src/shipping-info';
+import {PromotionAttribution as PromotionAttributionClass} from '../dist/src/promotion-attribution';
 import {version} from '../package.json';
 
 // GraphQL
@@ -104,5 +105,6 @@ class Client {
 export default Client;
 export {
   PreOrderTimelineClass as PreOrderTimeline,
-  ShippingInfoClass as ShippingInfo
+  ShippingInfoClass as ShippingInfo,
+  PromotionAttributionClass as PromotionAttribution
 };
