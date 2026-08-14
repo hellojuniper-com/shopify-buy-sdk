@@ -1,5 +1,5 @@
 import GraphQLJSClient from './graphql-client';
-import Config from './config';
+import Config, {DEFAULT_API_VERSION} from './config';
 import ProductResource from './product-resource';
 import CollectionResource from './collection-resource';
 import ShopResource from './shop-resource';
@@ -41,7 +41,12 @@ class Client {
    * @param {Config} config An instance of {@link Config} used to configure the Client.
    */
   constructor(config, GraphQLClientClass = GraphQLJSClient, fetchFunction) {
-    const url = `https://${config.domain}/api/2025-01/graphql`;
+    // The version was hardcoded here, which silently ignored `config.apiVersion` -- a caller
+    // could set it and get a different version than they asked for. The fallback covers a Client
+    // constructed directly with a plain object rather than through `buildClient`, which is the
+    // only path that guarantees a Config instance and therefore the default.
+    const apiVersion = config.apiVersion || DEFAULT_API_VERSION;
+    const url = `https://${config.domain}/api/${apiVersion}/graphql`;
 
     const headers = {
       'X-SDK-Variant': 'javascript',
@@ -104,5 +109,6 @@ class Client {
 export default Client;
 export {
   PreOrderTimelineClass as PreOrderTimeline,
-  ShippingInfoClass as ShippingInfo
+  ShippingInfoClass as ShippingInfo,
+  DEFAULT_API_VERSION
 };

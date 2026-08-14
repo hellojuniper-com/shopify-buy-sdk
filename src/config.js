@@ -1,4 +1,18 @@
 /**
+ * The Storefront API version this SDK targets by default.
+ *
+ * Shopify supports each stable version for a minimum of 12 months, and silently "falls forward"
+ * to the oldest accessible stable version once the one you target retires -- so a stale pin does
+ * not fail loudly, it just stops meaning what it says. Keep this current, and re-run
+ * `npm run schema:fetch` whenever it moves so `schema.json` matches the version being queried.
+ *
+ * https://shopify.dev/docs/api/usage/versioning
+ *
+ * @type String
+ */
+export const DEFAULT_API_VERSION = '2026-07';
+
+/**
  * The class used to configure the JS Buy SDK Client.
  * @class
  */
@@ -57,7 +71,7 @@ class Config {
     if (attrs.hasOwnProperty('apiVersion')) {
       this.apiVersion = attrs.apiVersion;
     } else {
-      this.apiVersion = '2024-04';
+      this.apiVersion = DEFAULT_API_VERSION;
     }
 
     if (attrs.hasOwnProperty('source')) {

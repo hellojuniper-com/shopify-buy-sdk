@@ -301,6 +301,42 @@ const clientWithTranslatedContent = Client.buildClient({
 });
 ```
 
+#### Storefront API version
+
+The client queries `DEFAULT_API_VERSION` unless you pin one:
+
+```javascript
+import Client from "shopify-buy";
+
+// Uses DEFAULT_API_VERSION.
+const client = Client.buildClient({
+  domain: "your-shop-name.myshopify.com",
+  storefrontAccessToken: "your-storefront-access-token",
+});
+
+// Or pin a version explicitly.
+const pinnedClient = Client.buildClient({
+  domain: "your-shop-name.myshopify.com",
+  storefrontAccessToken: "your-storefront-access-token",
+  apiVersion: "2026-07",
+});
+```
+
+`DEFAULT_API_VERSION` is exported, so a consumer holding its own pin can check the two have not
+drifted apart rather than duplicating the string:
+
+```javascript
+import { DEFAULT_API_VERSION } from "shopify-buy";
+
+console.log(DEFAULT_API_VERSION); // "2026-07"
+```
+
+Pin one only if you intend to track it. Shopify supports each stable version for a minimum of 12
+months and then [falls forward](https://shopify.dev/docs/api/usage/versioning) to the oldest
+accessible stable version without erroring — so a version left to go stale stops meaning what it
+says rather than failing loudly. `schema.json` in this repo is fetched for `DEFAULT_API_VERSION`,
+so pinning a different version means querying one schema with another's type bundle.
+
 ### Fetching Products
 
 ```javascript
