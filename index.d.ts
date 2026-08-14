@@ -1,5 +1,6 @@
 /// <reference path="./dist/types/src/pre-order-timeline.d.ts" />
 /// <reference path="./dist/types/src/shipping-info.d.ts" />
+/// <reference path="./dist/types/src/promotion-attribution.d.ts" />
 
 import {
     DateRange,
@@ -19,6 +20,10 @@ import {
 } from './dist/types/shared/types';
 import { PreOrderBatch, PreOrderTimeline as PreOrderTimelineClass } from './dist/types/src/pre-order-timeline';
 import { ShippingInfo as ShippingInfoClass } from './dist/types/src/shipping-info';
+import {
+    PromotionAssignment,
+    PromotionAttribution as PromotionAttributionClass,
+} from './dist/types/src/promotion-attribution';
 
 declare namespace ShopifyBuy {
     export function buildClient(config: Config): Client;
@@ -36,6 +41,20 @@ declare namespace ShopifyBuy {
      */
     type ShippingInfoConstructor = typeof ShippingInfoClass;
     export const ShippingInfo: ShippingInfoConstructor;
+
+    /**
+     * PromotionAttribution codec for carrying a cart's promotion (bundle) assignment through a
+     * Shopify cart permalink to the converted order.
+     *
+     * <p>Shared deliberately: juniper-react encodes when it builds the checkout URL, and the
+     * `shipping-timelines` checkout extension in theme-enhanced-checkout decodes and writes the
+     * result onto each cart line. Keeping both halves of the wire format in one place is what
+     * stops the two repositories drifting apart.
+     *
+     * Type definitions are auto-generated from typescript/src/promotion-attribution.ts
+     */
+    type PromotionAttributionConstructor = typeof PromotionAttributionClass;
+    export const PromotionAttribution: PromotionAttributionConstructor;
 
     export interface Client {
         product: ShopifyBuy.ProductResource;
@@ -573,6 +592,7 @@ declare namespace ShopifyBuy {
         ProcessingConfig,
         HolidayOrderCutoffConfig,
         ShipsOutAndArrivesDisplayValues,
+        PromotionAssignment,
     };
 }
 
