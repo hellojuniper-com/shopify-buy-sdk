@@ -111,9 +111,14 @@ export class PromotionAttribution {
      * no way to honour both on the decoding side.
      */
     public static parse(attributeValue?: string | null): { [legacyVariantId: string]: string } {
-        // Null prototype: nothing can be inherited, so a pair keyed `__proto__` or `constructor`
-        // cannot collide with a member or reach a setter.
-        const attribution: { [legacyVariantId: string]: string } = Object.create(null);
+        // A plain object on purpose. The key validation below is what makes an inherited member
+        // unreachable -- a digit-only key can never be `__proto__` or an `Object.prototype`
+        // member -- so a null prototype would be a second defence against something already
+        // impossible, and not a free one: this map is returned as `{ [k: string]: string }`, which
+        // gives a caller no hint that `.hasOwnProperty()` or string interpolation would throw on
+        // it. This runs inside checkout, where a debug log line must not be able to take a
+        // purchase down.
+        const attribution: { [legacyVariantId: string]: string } = {};
         if (!attributeValue) {
             return attribution;
         }

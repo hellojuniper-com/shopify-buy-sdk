@@ -178,7 +178,22 @@ describe('PromotionAttribution key space', () => {
 
         expect(attribution).toEqual({ '44123': 'promo-a' });
         expect(({} as Record<string, unknown>).evil).toBeUndefined();
-        expect(Object.getPrototypeOf(attribution)).toBeNull();
+    });
+
+    /**
+     * The map is handed back typed as a plain `{ [k: string]: string }`, so it has to behave like
+     * one. A null prototype would also have kept prototype keys out, but it throws on
+     * interpolation and on `.hasOwnProperty()` -- and this is decoded inside checkout, where a
+     * debug log line must not be able to take a purchase down. The key validation is what keeps
+     * inherited members out; this pins the cost of that choice not being paid twice.
+     */
+    it('returns a map a caller can treat as an ordinary object', () => {
+        const attribution = PromotionAttribution.parse('44123:promo-a');
+
+        expect(() => `${attribution}`).not.toThrow();
+        expect(Object.prototype.hasOwnProperty.call(attribution, '44123')).toBe(true);
+        expect(typeof (attribution as { hasOwnProperty?: unknown }).hasOwnProperty).toEqual('function');
+        expect(JSON.parse(JSON.stringify(attribution))).toEqual({ '44123': 'promo-a' });
     });
 
     it('never returns a non-string for an inherited key', () => {
