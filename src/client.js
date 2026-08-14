@@ -109,5 +109,6 @@ class Client {
 export default Client;
 export {
   PreOrderTimelineClass as PreOrderTimeline,
-  ShippingInfoClass as ShippingInfo
+  ShippingInfoClass as ShippingInfo,
+  DEFAULT_API_VERSION
 };

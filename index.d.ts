@@ -37,6 +37,13 @@ declare namespace ShopifyBuy {
     type ShippingInfoConstructor = typeof ShippingInfoClass;
     export const ShippingInfo: ShippingInfoConstructor;
 
+    /**
+     * The Storefront API version this SDK queries when `Config.apiVersion` is not set.
+     *
+     * Exposed so a consumer can keep its own pin in sync rather than duplicating the string.
+     */
+    export const DEFAULT_API_VERSION: string;
+
     export interface Client {
         product: ShopifyBuy.ProductResource;
         collection: ShopifyBuy.CollectionResource;
@@ -50,6 +57,14 @@ declare namespace ShopifyBuy {
         domain: string;
         storefrontAccessToken: string;
         language?: string | undefined;
+        /**
+         * Storefront API version to query, e.g. '2026-07'. Defaults to the SDK's
+         * DEFAULT_API_VERSION. Shopify supports each stable version for a minimum of 12 months
+         * and then silently falls forward, so pin one only if you intend to track it.
+         */
+        apiVersion?: string | undefined;
+        /** Value sent as the X-SDK-Variant-Source header. */
+        source?: string | undefined;
     }
 
     export interface ProductResource {

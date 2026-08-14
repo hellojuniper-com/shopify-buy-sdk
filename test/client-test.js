@@ -63,7 +63,7 @@ suite('client-test', () => {
     assert.equal(passedUrl.split('?')[0], `https://${config.domain}/api/${requestedVersion}/graphql`);
   });
 
-  test('it falls back to the default apiVersion when none is given', () => {
+  test('Config supplies the default apiVersion when none is given', () => {
     let passedUrl;
 
     class FakeGraphQLJSClient {
@@ -78,6 +78,32 @@ suite('client-test', () => {
     };
 
     new Client(new Config(withoutApiVersion), FakeGraphQLJSClient); // eslint-disable-line no-new
+
+    assert.equal(passedUrl.split('?')[0], `https://${config.domain}/api/${DEFAULT_API_VERSION}/graphql`);
+  });
+
+  /**
+   * The test above goes through `Config`, which has already filled in the default by the time the
+   * client sees it — so it does not reach the client's own fallback. `Client` is the bundle's
+   * default export and its constructor is reachable without `buildClient`, which is the case that
+   * fallback exists for. Passing the plain object is the only way to exercise it: delete the
+   * `|| DEFAULT_API_VERSION` in client.js and this is the test that fails.
+   */
+  test('the client falls back to the default when constructed without a Config', () => {
+    let passedUrl;
+
+    class FakeGraphQLJSClient {
+      constructor(typeBundle, {url}) {
+        passedUrl = url;
+      }
+    }
+
+    const plainObjectWithoutApiVersion = {
+      domain: config.domain,
+      storefrontAccessToken: config.storefrontAccessToken
+    };
+
+    new Client(plainObjectWithoutApiVersion, FakeGraphQLJSClient); // eslint-disable-line no-new
 
     assert.equal(passedUrl.split('?')[0], `https://${config.domain}/api/${DEFAULT_API_VERSION}/graphql`);
   });
