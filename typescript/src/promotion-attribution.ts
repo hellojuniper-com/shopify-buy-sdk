@@ -111,7 +111,9 @@ export class PromotionAttribution {
      * no way to honour both on the decoding side.
      */
     public static parse(attributeValue?: string | null): { [legacyVariantId: string]: string } {
-        const attribution: { [legacyVariantId: string]: string } = {};
+        // Null prototype: nothing can be inherited, so a pair keyed `__proto__` or `constructor`
+        // cannot collide with a member or reach a setter.
+        const attribution: { [legacyVariantId: string]: string } = Object.create(null);
         if (!attributeValue) {
             return attribution;
         }
@@ -123,11 +125,12 @@ export class PromotionAttribution {
             }
             const variantId = fields[0].trim();
             const promotionId = fields[1].trim();
-            if (!variantId || !promotionId) {
+            // Keys are validated against the shape the encoder emits, so both sides agree on one
+            // key space. Anything else could never be looked up anyway -- `getPromotionIdForVariant`
+            // only ever asks for a legacy numeric id -- so keeping it would be dead weight.
+            if (!promotionId || !/^\d+$/.test(variantId)) {
                 return;
             }
-            // Own-property test, not `in`: `in` walks the prototype chain, so a malformed pair
-            // keyed `constructor` or `toString` would read as already-present and be dropped.
             if (!Object.prototype.hasOwnProperty.call(attribution, variantId)) {
                 attribution[variantId] = promotionId;
             }
@@ -151,8 +154,9 @@ export class PromotionAttribution {
             return null;
         }
         const legacyId = PromotionAttribution.toLegacyId(variantId);
-        // Guarded so an inherited member (`constructor`, `toString`) can never be returned as
-        // though it were a promotion ID, which would break the `string | null` contract.
+        // `toLegacyId` returns "" or a digit string, and no digit string is an Object.prototype
+        // member, so the empty check already covers every inherited key. The own-property test is
+        // belt-and-braces for an `attribution` built by hand rather than by `parse`.
         if (!legacyId || !Object.prototype.hasOwnProperty.call(attribution, legacyId)) {
             return null;
         }
@@ -176,7 +180,14 @@ export class PromotionAttribution {
     /**
      * The legacy numeric ID for a variant, or `""` when the input is not one.
      *
-     * <p>Accepts a GID or a bare numeric ID and nothing else. The pattern is anchored on purpose:
+     * <p>Accepts a ProductVariant GID or a bare numeric ID and nothing else. The resource type is
+     * pinned rather than left open: legacy Shopify IDs are unique per type, not across types, so a
+     * Product GID accepted here could collide with a real variant ID and attribute a promotion to
+     * the wrong line. `product.id` and `variant.id` sit in the same scope in the calling code, so
+     * that is an easy mistake to make. Storefront's `Merchandise` union has one member today, and
+     * if Shopify adds another the failure mode becomes "dropped", which is the safe direction.
+     *
+     * <p>The pattern is anchored on purpose:
      * an unanchored "trailing run of digits" match will happily manufacture a plausible-looking ID
      * out of anything — `'12,34'` becomes `34`, `'abc123'` becomes `123`, `-5` becomes `5` — and a
      * fabricated ID is worse than no ID, because it silently attributes a promotion to the wrong
@@ -190,7 +201,7 @@ export class PromotionAttribution {
             return "";
         }
         const asString = String(id).trim();
-        const match = /^(?:gid:\/\/shopify\/[A-Za-z]+\/)?(\d+)$/.exec(asString);
+        const match = /^(?:gid:\/\/shopify\/ProductVariant\/)?(\d+)$/.exec(asString);
         return match ? match[1] : "";
     }
 

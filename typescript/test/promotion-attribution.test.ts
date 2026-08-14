@@ -62,10 +62,6 @@ describe('PromotionAttribution.encode', () => {
     });
 
     /**
-     * A stray separator inside an ID would silently re-shape every pair after it downstream, so
-     * the offending pair is dropped rather than corrupting the payload.
-     */
-    /**
      * The mirror of the promotion-ID case below. This was previously unreachable: `toLegacyId`
      * matched any trailing run of digits, so `'12,34'` was silently rewritten to `34` before the
      * separator guard could see it -- attributing the promotion to a variant that was never in
@@ -83,6 +79,9 @@ describe('PromotionAttribution.encode', () => {
         [
             'abc123',
             'gid://shopify/ProductVariant/123?x=1',
+            // Legacy IDs are unique per resource type, so a Product GID accepted here could
+            // collide with a real variant ID and attribute the promotion to the wrong line.
+            'gid://shopify/Product/123',
             -5,
             1.5,
             'Z2lkOi8vc2hvcGlmeS9Qcm9kdWN0VmFyaWFudC80NDU=',
@@ -92,6 +91,10 @@ describe('PromotionAttribution.encode', () => {
         });
     });
 
+    /**
+     * A stray separator inside an ID would silently re-shape every pair after it downstream, so
+     * the offending pair is dropped rather than corrupting the payload.
+     */
     it('drops a pair whose promotion ID contains a separator', () => {
         expect(PromotionAttribution.encode([
             { variantId: '44123', promotionId: 'promo,a' },
@@ -112,7 +115,8 @@ describe('PromotionAttribution.encode', () => {
 
         const encoded = PromotionAttribution.encode(assignments);
 
-        expect(encoded.length).toBeLessThanOrEqual(PromotionAttribution.MAX_VALUE_LENGTH);
+        // The URL carries the encoded form, so that is the bound that matters.
+        expect(encodeURIComponent(encoded).length).toBeLessThanOrEqual(PromotionAttribution.MAX_VALUE_LENGTH);
         expect(encoded).not.toEqual('');
         encoded.split(',').forEach((pair) => {
             expect(pair).toMatch(/^\d+:\d+$/);
@@ -159,17 +163,22 @@ describe('PromotionAttribution.parse', () => {
     });
 });
 
-/**
- * The reason the codec lives in this package rather than being hand-written on both sides. The
- * encoder runs in juniper-react and the decoder runs in a checkout extension in a different
- * repository; nothing else would catch the two drifting apart.
- */
-describe('PromotionAttribution prototype-key safety', () => {
-    it('does not treat an inherited member as an existing entry', () => {
-        expect(PromotionAttribution.parse('constructor:promo-a,toString:promo-b')).toEqual({
-            constructor: 'promo-a',
-            toString: 'promo-b',
-        });
+describe('PromotionAttribution key space', () => {
+    /**
+     * Both sides agree on one key space: the decoder accepts exactly what the encoder emits. That
+     * is what makes an inherited member unreachable by construction rather than by a guard.
+     */
+    it('rejects a key the encoder could never have produced', () => {
+        expect(PromotionAttribution.parse('constructor:promo-a,toString:promo-b')).toEqual({});
+        expect(PromotionAttribution.parse('abc:promo-a,44123:promo-b')).toEqual({ '44123': 'promo-b' });
+    });
+
+    it('does not pollute the prototype', () => {
+        const attribution = PromotionAttribution.parse('__proto__:evil,44123:promo-a');
+
+        expect(attribution).toEqual({ '44123': 'promo-a' });
+        expect(({} as Record<string, unknown>).evil).toBeUndefined();
+        expect(Object.getPrototypeOf(attribution)).toBeNull();
     });
 
     it('never returns a non-string for an inherited key', () => {
@@ -181,6 +190,11 @@ describe('PromotionAttribution prototype-key safety', () => {
     });
 });
 
+/**
+ * The reason the codec lives in this package rather than being hand-written on both sides. The
+ * encoder runs in juniper-react and the decoder runs in a checkout extension in a different
+ * repository; nothing else would catch the two drifting apart.
+ */
 describe('PromotionAttribution round trip', () => {
     /**
      * The encoder must never emit a pair the decoder throws away. `parse` trims both fields, so
