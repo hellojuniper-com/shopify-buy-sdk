@@ -306,13 +306,29 @@ const clientWithTranslatedContent = Client.buildClient({
 The client queries `DEFAULT_API_VERSION` unless you pin one:
 
 ```javascript
-import Client, { DEFAULT_API_VERSION } from "shopify-buy";
+import Client from "shopify-buy";
 
+// Uses DEFAULT_API_VERSION.
 const client = Client.buildClient({
+  domain: "your-shop-name.myshopify.com",
+  storefrontAccessToken: "your-storefront-access-token",
+});
+
+// Or pin a version explicitly.
+const pinnedClient = Client.buildClient({
   domain: "your-shop-name.myshopify.com",
   storefrontAccessToken: "your-storefront-access-token",
   apiVersion: "2026-07",
 });
+```
+
+`DEFAULT_API_VERSION` is exported, so a consumer holding its own pin can check the two have not
+drifted apart rather than duplicating the string:
+
+```javascript
+import { DEFAULT_API_VERSION } from "shopify-buy";
+
+console.log(DEFAULT_API_VERSION); // "2026-07"
 ```
 
 Pin one only if you intend to track it. Shopify supports each stable version for a minimum of 12
