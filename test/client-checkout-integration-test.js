@@ -1,6 +1,31 @@
 import assert from 'assert';
 import Client from '../src/client';
 
+/**
+ * Strips the `key` query parameter from a checkout URL.
+ *
+ * `webUrl` maps to the Storefront Cart API's `cart.checkoutUrl`, which carries a signed `key`
+ * parameter that Shopify appends so buyer information survives into checkout
+ * (https://shopify.dev/changelog/storefront-api-cart-checkouturl-now-contains-key-param).
+ *
+ * That changelog documents the parameter's existence and purpose, not its lifetime. What breaks
+ * this test is that Shopify returns a *different* key on each read of the field -- verified
+ * against the live demo storefront, where creating a cart and re-fetching it yields the same
+ * cart token in the path and two different keys. Comparing the raw URLs asserted something
+ * Shopify never promised, and it started failing once the key began varying per request.
+ *
+ * Everything except the key is compared, so a fetch returning the wrong cart still fails: the
+ * cart token lives in the path. The identity assertion in the test does not depend on this
+ * helper at all.
+ */
+function withoutCheckoutUrlKey(url) {
+  const parsed = new URL(url);
+
+  parsed.searchParams.delete('key');
+
+  return parsed.toString();
+}
+
 suite('client-checkout-integration-test', () => {
   const domain = 'graphql.myshopify.com';
 
@@ -213,7 +238,13 @@ suite('client-checkout-integration-test', () => {
       return client.checkout.create({}).then((checkout) => {
         return client.checkout.fetch(checkout.id).then((updatedCheckout) => {
           assert.ok(typeof updatedCheckout.checkoutUrl === 'undefined');
-          assert.strictEqual(updatedCheckout.webUrl, checkout.webUrl);
+
+          // The assertion this test is named for. Deterministic, and unaffected by anything
+          // Shopify does to checkoutUrl -- the URL comparison below was carrying this signal
+          // on its own until the key started rotating.
+          assert.strictEqual(updatedCheckout.id, checkout.id);
+
+          assert.strictEqual(withoutCheckoutUrlKey(updatedCheckout.webUrl), withoutCheckoutUrlKey(checkout.webUrl));
         });
       });
     });
