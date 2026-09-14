@@ -1,0 +1,35 @@
+name: Claude Review PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # This repo is public: pull_request runs from a fork get no secrets, so
+    # the action would fail on an empty CLAUDE_CODE_OAUTH_TOKEN. Skip rather
+    # than fail confusingly (same rationale as taiga-theme-builder's
+    # pr.verify.yml). The review is not a required check, so the skip does
+    # not gate anything.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    uses: hellojuniper-com/claude-workflows/.github/workflows/claude-review.yml@main
+    with:
+      # execute is the job in build-test-on-pull-request.yml (check run
+      # "execute (20.x)" matches the base job name); tests is the inherited
+      # upstream workflow in tests.yml, which also runs on every PR.
+      required_checks: "execute,tests"
+    # id-token: write is needed for the action's OIDC handshake and must be
+    # granted in BOTH this caller job and the reusable workflow
+    # (claude-code-action issue #443).
+    permissions:
+      actions: read
+      contents: read
+      checks: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    secrets: inherit
