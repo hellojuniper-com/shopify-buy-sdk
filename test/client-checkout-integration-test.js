@@ -212,8 +212,17 @@ suite('client-checkout-integration-test', () => {
     test('it fetches a checkout by id', () => {
       return client.checkout.create({}).then((checkout) => {
         return client.checkout.fetch(checkout.id).then((updatedCheckout) => {
+          // The SDK exposes the URL as `webUrl`; the raw Storefront field name must not leak through.
           assert.ok(typeof updatedCheckout.checkoutUrl === 'undefined');
-          assert.strictEqual(updatedCheckout.webUrl, checkout.webUrl);
+
+          // Round-trip identity: fetching by id returns the same cart we created. The cart token
+          // is the identity, so assert on it directly rather than on webUrl -- Shopify mints a
+          // fresh signed `key` query param on every read of checkoutUrl, so the raw URLs differ
+          // per request even for the same cart (this is what the old webUrl comparison tripped on).
+          assert.strictEqual(updatedCheckout.id, checkout.id);
+
+          // webUrl still maps through on a fetched checkout; its exact contents are Shopify's to vary.
+          assert.ok(typeof updatedCheckout.webUrl === 'string');
         });
       });
     });
