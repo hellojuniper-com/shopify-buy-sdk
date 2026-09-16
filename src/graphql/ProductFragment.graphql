@@ -89,12 +89,8 @@ fragment ProductFragment on Product {
     {namespace: "productListing", key: "processingTime"},
     {namespace: "productListing", key: "liveStatus"},
     {namespace: "productListing", key: "storeIds"},
-    # A listing sold on more than one sales channel has one row per channel in Shopify. These two
-    # pair those rows: canonicalProductIdRedirect sits on a duplicate and names the canonical web
-    # listing it stands in for; crossListedProductIds sits on that canonical listing and names its
-    # duplicates. Both are product references, so their value is a GID.
-    {namespace: "productListing", key: "canonicalProductIdRedirect"},
-    {namespace: "productListing", key: "crossListedProductIds"},
+    # Set on a listing duplicated to another sales channel, naming the web listing it stands in for.
+    {namespace: "productListing", key: "webProductIdRedirect"},
     {namespace: "productListing", key: "stockCounterThreshold"},
     {namespace: "productListing", key: "outOfStockPolicy"},
     {namespace: "productListing", key: "isBundleExclusive"},
