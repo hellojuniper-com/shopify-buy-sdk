@@ -213,7 +213,9 @@ suite('client-checkout-integration-test', () => {
       return client.checkout.create({}).then((checkout) => {
         return client.checkout.fetch(checkout.id).then((updatedCheckout) => {
           assert.ok(typeof updatedCheckout.checkoutUrl === 'undefined');
-          assert.strictEqual(updatedCheckout.webUrl, checkout.webUrl);
+          assert.strictEqual(updatedCheckout.id, checkout.id);
+          // Shopify mints a fresh signed `key` per request, so compare cart identity, not the query string.
+          assert.strictEqual(new URL(updatedCheckout.webUrl).pathname, new URL(checkout.webUrl).pathname);
         });
       });
     });
