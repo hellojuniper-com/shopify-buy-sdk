@@ -89,6 +89,8 @@ fragment ProductFragment on Product {
     {namespace: "productListing", key: "processingTime"},
     {namespace: "productListing", key: "liveStatus"},
     {namespace: "productListing", key: "storeIds"},
+    # Set on a listing duplicated to another sales channel, naming the web listing it stands in for.
+    {namespace: "productListing", key: "webProductIdRedirect"},
     {namespace: "productListing", key: "stockCounterThreshold"},
     {namespace: "productListing", key: "outOfStockPolicy"},
     {namespace: "productListing", key: "isBundleExclusive"},
