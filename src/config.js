@@ -67,6 +67,14 @@ class Config {
     if (attrs.hasOwnProperty('language')) {
       this.language = attrs.language;
     }
+
+    // A Shopify Storefront `CountryCode` (ISO-3166 alpha-2, e.g. `GB`). When set, read
+    // operations are issued `@inContext(country:)` so the Storefront API returns prices
+    // in the buyer's market — FX-converted via the market's Dynamic FX and tax-inclusive
+    // when the market enables dynamic tax-inclusive display. See `./in-context`.
+    if (attrs.hasOwnProperty('country')) {
+      this.country = attrs.country;
+    }
   }
 }
 
