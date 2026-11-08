@@ -12,7 +12,7 @@
     "CN": {
         "US": {
             "minDays": 7,
-            "maxDays": 14
+            "maxDays": 11
         },
         "GB": {
             "minDays": 5,

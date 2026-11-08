@@ -62,7 +62,7 @@ describe('getDeliveryByLocation', () => {
 
     it('should return CN to US delivery times', () => {
       const result = getDeliveryByLocation('CN', 'US');
-      expect(result).toEqual({ minDays: 7, maxDays: 14 });
+      expect(result).toEqual({ minDays: 7, maxDays: 11 });
     });
 
     it('should return CN to GB delivery times', () => {
