@@ -6,14 +6,6 @@ suite('in-context-test', () => {
     assert.equal(inContextArgs({country: 'GB'}), 'country: GB');
   });
 
-  test('it builds directive args for country and language', () => {
-    assert.equal(inContextArgs({country: 'GB', language: 'EN'}), 'country: GB, language: EN');
-  });
-
-  test('it builds directive args for language only', () => {
-    assert.equal(inContextArgs({language: 'EN'}), 'language: EN');
-  });
-
   test('it returns empty args when no context is provided', () => {
     assert.equal(inContextArgs(), '');
     assert.equal(inContextArgs({}), '');
@@ -32,8 +24,8 @@ suite('in-context-test', () => {
     const query = 'query ProductById ($id: ID!) {node(id: $id) {id}}';
 
     assert.equal(
-      injectInContext(query, {country: 'DE', language: 'DE'}),
-      'query ProductById ($id: ID!) @inContext(country: DE, language: DE) {node(id: $id) {id}}'
+      injectInContext(query, {country: 'DE'}),
+      'query ProductById ($id: ID!) @inContext(country: DE) {node(id: $id) {id}}'
     );
   });
 
@@ -76,6 +68,21 @@ suite('in-context-test', () => {
     );
   });
 
+  test('it skips a query argument that precedes the operation in a fragment', () => {
+    const fragment = 'fragment F on QueryRoot  { id,products (first: 1 query: "x") { edges { node { id } } } }';
+
+    assert.equal(
+      injectInContext(`${fragment},query  { ...F }`, {country: 'GB'}),
+      `${fragment},query @inContext(country: GB) { ...F }`
+    );
+  });
+
+  test('it leaves a mutation with a $query variable untouched', () => {
+    const mutation = 'mutation ($a:Int,$query:String)  { foo (a: $a query: $query) { id } }';
+
+    assert.equal(injectInContext(mutation, {country: 'GB'}), mutation);
+  });
+
   test('it leaves mutations untouched', () => {
     const mutation = 'mutation ($input: CartInput!) {cartCreate(input: $input) {cart {id}}}';
 
@@ -101,6 +108,14 @@ suite('in-context-test', () => {
     const query = 'query ($id: ID!) @inContext(country: GB) {node(id: $id) {id}}';
 
     assert.equal(injectInContext(query, {country: 'GB'}), query);
+  });
+
+  test('it leaves the query unchanged for a country outside the Shopify CountryCode enum', () => {
+    const query = 'query ($id: ID!) {node(id: $id) {id}}';
+
+    ['gb', 'GBR', 'G', 'G1', 'GB, language: EN', '', 'UK', 'PR', ['GB']].forEach((country) => {
+      assert.equal(injectInContext(query, {country}), query, `country '${country}'`);
+    });
   });
 
   test('it is a no-op for non-string input', () => {

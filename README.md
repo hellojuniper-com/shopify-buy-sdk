@@ -78,7 +78,7 @@ The updated checkout interface supports all existing methods with some limitatio
 | method                | compatibility | notes                                                                                                                                                                                              |
 | --------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | fetch                 | ✅            |                                                                                                                                                                                                    |
-| create                | ✅⚠️          | - Does not create localized checkouts when passing `presentmentCurrencyCode` <br /> - Does not localize an _empty_ checkout created with `buyerIdentity.countryCode`. (Must create with lineItems) |
+| create                | ✅⚠️          | - Does not create localized checkouts when passing `presentmentCurrencyCode`                                                                                                                        |
 | updateAttributes      | ✅⚠️          | - Does not update a checkout to support `allowPartialAddresses`                                                                                                                                 |
 | updateEmail           | ✅            |                                                                                                                                                                                                    |
 | addLineItems          | ✅            |                                                                                                                                                                                                    |
@@ -299,6 +299,23 @@ const clientWithTranslatedContent = Client.buildClient({
   storefrontAccessToken: "your-storefront-access-token",
   language: "ja-JP",
 });
+
+// Initializing a client to return prices in a country's market (a Storefront API CountryCode)
+const clientWithMarketPrices = Client.buildClient({
+  domain: "your-shop-name.myshopify.com",
+  storefrontAccessToken: "your-storefront-access-token",
+  country: "GB",
+});
+```
+
+`country` applies to reads and is fixed when the client is built, so build a new client to switch country. A cart is priced by its own buyer country, so set that too:
+
+```javascript
+// A new cart in the same market
+client.checkout.create({ buyerIdentity: { countryCode: "GB" } });
+
+// An existing cart keeps its country until it is moved (Shopify clears the cart's email on this update)
+client.checkout.updateBuyerCountry(checkoutId, "US");
 ```
 
 ### Fetching Products

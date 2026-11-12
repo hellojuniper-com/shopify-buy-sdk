@@ -1,6 +1,6 @@
 /**
  * Shopify "dynamic tax-inclusive pricing" (part of Shopify Markets) is driven by the
- * `@inContext(country:, language:)` directive on Storefront API *read* operations. When a
+ * `@inContext(country:)` directive on Storefront API *read* operations. When a
  * query carries it, the Storefront API returns prices already converted via the market's
  * Dynamic FX and **tax-inclusive** for markets that enable dynamic tax-inclusive display —
  * so the displayed price matches what the customer pays at checkout.
@@ -20,45 +20,24 @@
  * mapper already supports on cart create.
  */
 
-/**
- * Builds the argument list for the `@inContext` directive, e.g. `country: GB, language: EN`.
- * Values are emitted as GraphQL enum literals (unquoted), matching `CountryCode`/`LanguageCode`.
- *
- * @private
- * @param {Object} context
- * @param {String} [context.country] A Shopify `CountryCode` enum value (e.g. `GB`).
- * @param {String} [context.language] A Shopify `LanguageCode` enum value (e.g. `EN`).
- * @return {String} The directive arguments, or `''` when neither is set.
- */
-function inContextArgs({country, language} = {}) {
-  const args = [];
+import {isCountryCode} from './country-code';
 
-  if (country) {
-    args.push(`country: ${country}`);
-  }
-
-  if (language) {
-    args.push(`language: ${language}`);
-  }
-
-  return args.join(', ');
+function inContextArgs({country} = {}) {
+  return isCountryCode(country) ? `country: ${country}` : '';
 }
 
 /**
- * Injects an `@inContext(...)` directive into the leading `query` operation of a serialized
+ * Injects an `@inContext(...)` directive into the `query` operation of a serialized
  * GraphQL document. Returns the document unchanged when there is no context to apply, when
  * the directive is already present, or when the operation is not a `query` (e.g. a mutation).
  *
- * The operation header is matched up to its selection-set `{`, anchored to the start of a
- * top-level definition (string start, or the `,` that graphql-js-client emits between
- * definitions — it serializes referenced fragments first and the operation last) so that a
- * field named `query` inside a selection set cannot match. Only the operation is rewritten;
- * the fragment definitions are left alone.
+ * graphql-js-client serializes fragments first and comma-joins definitions, so the operation
+ * keyword follows the string start or a `,`. That skips `query:` arguments and `$query`
+ * variables; it relies on no document selecting a field or alias named `query`.
  *
  * @param {String} query The serialized GraphQL document.
  * @param {Object} [context]
  * @param {String} [context.country] A Shopify `CountryCode` enum value (e.g. `GB`).
- * @param {String} [context.language] A Shopify `LanguageCode` enum value (e.g. `EN`).
  * @return {String} The document with the directive injected, or the original document.
  */
 export default function injectInContext(query, context = {}) {
