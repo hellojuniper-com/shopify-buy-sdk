@@ -1,5 +1,7 @@
 import GraphQLJSClient from './graphql-client';
 import Config from './config';
+import injectInContext from './in-context';
+import {isCountryCode, warnIgnoredCountry} from './country-code';
 import ProductResource from './product-resource';
 import CollectionResource from './collection-resource';
 import ShopResource from './shop-resource';
@@ -76,6 +78,27 @@ class Client {
         url,
         fetcherOptions: {headers}
       });
+    }
+
+    // When a market country is configured, issue every read operation
+    // `@inContext(country:)` so the Storefront API returns market prices (FX-converted and
+    // tax-inclusive where the market enables it). The directive cannot be expressed through
+    // the compiled document, so it is injected into the serialized query here, at the single
+    // point every resource's request passes through. See `./in-context`. Mutations are left
+    // untouched — cart/checkout context travels via `buyerIdentity.countryCode`.
+    if (isCountryCode(config.country)) {
+      const inContext = {country: config.country};
+      const baseFetcher = this.graphQLClient.fetcher;
+
+      this.graphQLClient.fetcher = function fetcherWithInContext(graphQLParams, requestHeaders) {
+        const params = (graphQLParams && typeof graphQLParams.query === 'string')
+          ? Object.assign({}, graphQLParams, {query: injectInContext(graphQLParams.query, inContext)})
+          : graphQLParams;
+
+        return baseFetcher(params, requestHeaders);
+      };
+    } else if (config.country) {
+      warnIgnoredCountry('config.country', config.country);
     }
 
     this.product = new ProductResource(this.graphQLClient);

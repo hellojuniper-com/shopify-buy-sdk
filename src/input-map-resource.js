@@ -1,3 +1,5 @@
+import {isCountryCode, warnIgnoredCountry} from './country-code';
+
 export default class InputMapper {
   create(input = {}) {
     const cartInput = {};
@@ -38,12 +40,15 @@ export default class InputMapper {
       cartInput.attributes = input.customAttributes;
     }
 
-    // Fields that aren't documented in SDK but could still be passed in:
     if (input.buyerIdentity) {
       if (!cartInput.buyerIdentity) {
         cartInput.buyerIdentity = {};
       }
-      cartInput.buyerIdentity.countryCode = input.buyerIdentity.countryCode;
+      if (isCountryCode(input.buyerIdentity.countryCode)) {
+        cartInput.buyerIdentity.countryCode = input.buyerIdentity.countryCode;
+      } else if (input.buyerIdentity.countryCode) {
+        warnIgnoredCountry('buyerIdentity.countryCode', input.buyerIdentity.countryCode);
+      }
     }
 
     if (input.allowPartialAddresses) {
@@ -94,6 +99,13 @@ export default class InputMapper {
     };
 
     return cartBuyerIdentityInput;
+  }
+
+  updateBuyerCountry(checkoutId, countryCode) {
+    return {
+      buyerIdentity: {countryCode},
+      cartId: checkoutId
+    };
   }
 
   addLineItems(checkoutId, lineItems) {

@@ -1,6 +1,7 @@
 import Resource from './resource';
 import handleCartMutation from './handle-cart-mutation';
 import {mapCartPayload} from './cart-payload-mapper';
+import {isCountryCode} from './country-code';
 
 import cartNodeQuery from './graphql/CartNodeQuery.graphql';
 import cartCreateMutation from './graphql/CartCreateMutation.graphql';
@@ -83,6 +84,7 @@ class CheckoutResource extends Resource {
    *   @param {Object} [input.shippingAddress] A shipping address. See the {@link https://help.shopify.com/api/storefront-api/reference/input-object/mailingaddressinput|Storefront API reference} for valid input fields.
    *   @param {String} [input.note] A note for the checkout.
    *   @param {Object[]} [input.customAttributes] A list of custom attributes for the checkout. See the {@link https://help.shopify.com/api/storefront-api/reference/input-object/attributeinput|Storefront API reference} for valid input fields.
+   *   @param {Object} [input.buyerIdentity] `{countryCode}`: the country whose market prices the checkout. A code outside the `CountryCode` enum is ignored with a warning.
    *   @deprecated {String} [input.presentmentCurrencyCode ] A presentment currency code. See the {@link https://help.shopify.com/en/api/storefront-api/reference/enum/currencycode|Storefront API reference} for valid currency code values.
    *   @return {Promise|GraphModel} A promise resolving with the created checkout.
    */
@@ -156,6 +158,31 @@ class CheckoutResource extends Resource {
    */
   updateEmail(checkoutId, email) {
     const variables = this.inputMapper.updateEmail(checkoutId, email);
+
+    return this.graphQLClient
+      .send(cartBuyerIdentityUpdateMutation, variables)
+      .then(handleCartMutation('cartBuyerIdentityUpdate', this.graphQLClient));
+  }
+
+  /**
+   * Moves an existing checkout to another country's market, re-pricing it. Shopify clears the
+   * checkout's email on this update. Rejects for a country outside the `CountryCode` enum.
+   *
+   * @example
+   * client.checkout.updateBuyerCountry(checkoutId, 'GB').then((checkout) => {
+   *   // Do something with the re-priced checkout
+   * });
+   *
+   * @param {String} checkoutId The ID of the checkout to update.
+   * @param {String} countryCode A Shopify `CountryCode` (e.g. `GB`).
+   * @return {Promise|GraphModel} A promise resolving with the updated checkout.
+   */
+  updateBuyerCountry(checkoutId, countryCode) {
+    if (!isCountryCode(countryCode)) {
+      return Promise.reject(new Error("[ShopifyBuy] updateBuyerCountry needs a Shopify CountryCode such as 'GB'."));
+    }
+
+    const variables = this.inputMapper.updateBuyerCountry(checkoutId, countryCode);
 
     return this.graphQLClient
       .send(cartBuyerIdentityUpdateMutation, variables)

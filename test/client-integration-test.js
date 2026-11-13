@@ -77,6 +77,15 @@ suite('client-integration-test', () => {
     });
   });
 
+  test('it resolves a product priced in the market of the country config', () => {
+    const marketClient = Client.buildClient(Object.assign({}, config, {country: 'US'}));
+
+    return marketClient.product.fetch(PRODUCT_IDS[0]).then((product) => {
+      assert.equal(product.id, PRODUCT_IDS[0]);
+      assert.equal(product.variants[0].price.currencyCode, 'USD');
+    });
+  });
+
   test('it resolves recommended products on Client.product#fetchRecommendations', () => {
 
     return client.product.fetchRecommendations(PRODUCT_IDS[0]).then((products) => {

@@ -157,7 +157,6 @@ suite('client-checkout-integration-test', () => {
       const input = {
         buyerIdentity: {
           countryCode: 'US'
-          // NOTE: if we don't pass an item, the cart won't localize setting currencyCode to XXX
         },
         lineItems: [
           {
@@ -173,6 +172,19 @@ suite('client-checkout-integration-test', () => {
         assert.strictEqual(checkout.currencyCode, 'USD');
       });
     });
+
+    test('it localizes an empty checkout created with buyerIdentity.countryCode', () => {
+      const input = {
+        buyerIdentity: {
+          countryCode: 'US'
+        }
+      };
+
+      return client.checkout.create(input).then((checkout) => {
+        assert.strictEqual(checkout.lineItems.length, 0);
+        assert.strictEqual(checkout.paymentDueV2.currencyCode, 'USD');
+      });
+    });
   });
 
   suite('create / not supported', () => {
@@ -185,24 +197,22 @@ suite('client-checkout-integration-test', () => {
         assert.ok(checkout.paymentDueV2.currencyCode !== input.presentmentCurrencyCode);
       });
     });
-
-    // NOTE: if we don't pass an item, the updatedCheckout won't respect the countryCode and set the currencyCode to XXX
-    // this is a known Cart limitation tracked as Sev3
-    test("a localized empty checkout created with buyerIdentity.countryCode will default to the shop's currency", () => {
-      const input = {
-        buyerIdentity: {
-          countryCode: 'ES'
-        }
-      };
-
-      return client.checkout.create(input).then((checkout) => {
-        assert.strictEqual(checkout.paymentDueV2.currencyCode, 'CAD');
-      });
-    });
-
   });
 
   suite('fetch', () => {
+    test('it prices a fetched checkout by its own buyer country, not the country config', () => {
+      const lineItems = [{variantId: 'gid://shopify/ProductVariant/50850336211000', quantity: 1}];
+      const marketClient = Client.buildClient(Object.assign({}, config, {country: 'US'}));
+
+      return client.checkout.create({lineItems}).then((checkout) => {
+        return marketClient.checkout.fetch(checkout.id).then((fetchedCheckout) => {
+          assert.strictEqual(fetchedCheckout.buyerIdentity.countryCode, 'CA');
+          assert.strictEqual(fetchedCheckout.currencyCode, 'CAD');
+          assert.strictEqual(fetchedCheckout.lineItems[0].variant.price.currencyCode, 'CAD');
+        });
+      });
+    });
+
     test('it returns a null checkout for an invalid checkoutId', () => {
       return client.checkout.fetch('gid://shopify/Cart/invalid').then((checkout) => {
         assert.strictEqual(checkout, null);
@@ -372,6 +382,33 @@ suite('client-checkout-integration-test', () => {
       return client.checkout.create({}).then((checkout) => {
         return client.checkout.updateEmail(checkout.id, email).then((updatedCheckout) => {
           assert.strictEqual(updatedCheckout.email, email);
+        });
+      });
+    });
+
+    test('it keeps the buyer country of a checkout via updateEmail', () => {
+      return client.checkout.create({buyerIdentity: {countryCode: 'US'}}).then((checkout) => {
+        return client.checkout.updateEmail(checkout.id, 'sdk@shopify.com').then((updatedCheckout) => {
+          assert.strictEqual(updatedCheckout.buyerIdentity.countryCode, 'US');
+        });
+      });
+    });
+  });
+
+  suite('updateBuyerCountry', () => {
+    test('it re-prices an existing checkout in the new country via updateBuyerCountry', () => {
+      const lineItems = [{variantId: 'gid://shopify/ProductVariant/50850336211000', quantity: 1}];
+
+      return client.checkout.create({email: 'sdk@shopify.com', lineItems}).then((checkout) => {
+        assert.strictEqual(checkout.buyerIdentity.countryCode, 'CA');
+        assert.strictEqual(checkout.currencyCode, 'CAD');
+        assert.strictEqual(checkout.email, 'sdk@shopify.com');
+
+        return client.checkout.updateBuyerCountry(checkout.id, 'US').then((updatedCheckout) => {
+          assert.strictEqual(updatedCheckout.buyerIdentity.countryCode, 'US');
+          assert.strictEqual(updatedCheckout.currencyCode, 'USD');
+          assert.strictEqual(updatedCheckout.lineItems[0].variant.price.currencyCode, 'USD');
+          assert.strictEqual(updatedCheckout.email, null);
         });
       });
     });

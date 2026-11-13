@@ -50,6 +50,15 @@ declare namespace ShopifyBuy {
         domain: string;
         storefrontAccessToken: string;
         language?: string | undefined;
+        /**
+         * A Shopify Storefront `CountryCode` (ISO-3166 alpha-2, e.g. `"GB"`). When set, read
+         * operations are issued `@inContext(country:)`, so the Storefront API returns prices in
+         * the buyer's market — FX-converted via the market's Dynamic FX and tax-inclusive where
+         * the market enables dynamic tax-inclusive display. A value outside the enum is ignored
+         * with a warning. Fixed when the client is built. Carts are priced by their own buyer
+         * country: pass the same code as `buyerIdentity.countryCode` to `checkout.create`.
+         */
+        country?: string | undefined;
     }
 
     export interface ProductResource {
@@ -80,14 +89,22 @@ declare namespace ShopifyBuy {
         fetchQuery(query: Query): Promise<any[]>; // TODO fix to be a type: DOC: Fetches a collection by handle on the shop. Assuming it does not give products
     }
 
+    export interface CheckoutCreateInput {
+        lineItems?: LineItemToAdd[];
+        email?: string;
+        note?: string;
+        shippingAddress?: Address;
+        customAttributes?: AttributeInput[];
+        /**
+         * `countryCode` (a Shopify `CountryCode`, e.g. `"GB"`) ties the cart to that country's market.
+         * Every price in the cart follows it, in queries and mutations alike, not `@inContext`.
+         * A code outside the enum is ignored with a warning.
+         */
+        buyerIdentity?: { countryCode?: string | null };
+    }
+
     export interface CheckoutResource {
-        create(
-            email?: string,
-            lineItems?: LineItem[],
-            shippingAddress?: Address,
-            note?: string,
-            customAttributes?: AttributeInput[],
-        ): Promise<Cart>;
+        create(input?: CheckoutCreateInput): Promise<Cart>;
 
         fetch(id: string): Promise<Cart>;
 
@@ -122,6 +139,13 @@ declare namespace ShopifyBuy {
          * Update line item quantities based on an array of line item ids
          */
         updateLineItems(checkoutId: string | number, lineItems: LineItemToUpdate[]): Promise<Cart>;
+
+        /**
+         * Move an existing cart to another country's market (a Shopify `CountryCode`, e.g. `"GB"`),
+         * re-pricing it. Shopify clears the cart's email on this update. Rejects for a code
+         * outside the enum.
+         */
+        updateBuyerCountry(checkoutId: string | number, countryCode: string): Promise<Cart>;
     }
 
     export interface ShopResource {
@@ -391,6 +415,16 @@ declare namespace ShopifyBuy {
          * Get checkout url
          */
         webUrl: string;
+
+        /**
+         * The country whose market prices the cart. Shopify defaults it to the shop's country.
+         */
+        buyerIdentity: { countryCode: string | null };
+
+        /**
+         * The currency of the cart's totals, set by its buyer country's market.
+         */
+        currencyCode: string | null;
     }
 
     export interface LineItem extends GraphModel {
