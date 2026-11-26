@@ -55,6 +55,8 @@ fragment ProductFragmentSimplified on Product {
     {namespace: "productListing", key: "webProductIdRedirect"},
     {namespace: "productListing", key: "stockCounterThreshold"},
     {namespace: "productListing", key: "outOfStockPolicy"},
+    # Set to true when a Limited Stock product's counter should read live inventory instead of units sold.
+    {namespace: "productListing", key: "stockCounterOverride"},
   ]) {
     ...MetafieldWithReferenceFragment
   }
